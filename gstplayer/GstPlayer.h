@@ -76,9 +76,7 @@ public:
 
     // make available to GstDriver
     void        sendEvent(int msg, int ext1=0, int ext2=0) { MediaPlayerBase::sendEvent(msg, ext1, ext2); }
-#ifdef STECONF_ANDROID_VERSION_FROYO
 	virtual status_t setDataSource(const char *url, const KeyedVector<String8, String8> *headers);
-#endif
 private:
     //static void         do_nothing(status_t s, void *cookie, bool cancelled) { if(s) { /* warning removal*/ } if(cookie) { /* warning removal*/ }  if(cancelled) { /* warning removal*/ }  }
 	void				checkSetup();

@@ -68,13 +68,13 @@ status_t GstPlayer::setSigBusHandlerStructTLSKey(pthread_key_t key)
 	UNUSED(key);
 	return OK;
 }
-#ifdef STECONF_ANDROID_VERSION_FROYO
+
 status_t GstPlayer::setDataSource(
         const char *url, const KeyedVector<String8, String8> *headers) {
     LOGI("setDataSource('%s')", url);
 	return setDataSource(url);
 }
-#endif
+
 status_t GstPlayer::setDataSource(const char *url)
 {
 	LOGI("GstPlayer setDataSource(%s)", url);

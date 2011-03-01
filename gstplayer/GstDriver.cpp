@@ -23,7 +23,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include "GstDriver.h"
 #include "GstPlayer.h"
-#include "GsticbAndroidVideoSink.h"
 #include <gst/video/video.h>
 #include <fcntl.h>
 #include <media/Metadata.h>

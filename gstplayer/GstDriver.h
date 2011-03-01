@@ -25,12 +25,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <gst/app/gstappsrc.h>
 #include <utils/List.h>
 #include <utils/Log.h>
-// SurfaceFlinger
-#ifdef STECONF_ANDROID_VERSION_FROYO
 #include <surfaceflinger/ISurface.h>
-#else 
-#include <ui/ISurface.h>
-#endif
 
 // pmem interprocess shared memory support
 #include <binder/MemoryBase.h>

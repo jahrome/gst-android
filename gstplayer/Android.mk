@@ -23,7 +23,6 @@ LOCAL_CFLAGS := \
 
 
 LOCAL_SHARED_LIBRARIES := \
-	libgstmetadataretriever \
 	libgstreamer-0.10	\
 	libgstbase-0.10		\
 	libglib-2.0		\
@@ -91,7 +90,7 @@ LOCAL_MODULE_TAGS := optional
 
 LOCAL_PRELINK_MODULE := false 
 
-include $(BUILD_SHARED_LIBRARY)
+#include $(BUILD_SHARED_LIBRARY)
 
 
 #

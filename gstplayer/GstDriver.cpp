@@ -154,11 +154,11 @@ GstDriver::setup ()
   g_source_attach (mBusWatch, mMainCtx);
 
   if (mparent) {
-    mVideoBin = gst_element_factory_make ("icbandroidvideosink", NULL);
+    mVideoBin = gst_element_factory_make ("surfaceflingersink", NULL);
     if (!mVideoBin) {
-      LOGE ("Can't create icbandroidvideosink");
+      LOGE ("Can't create surfaceflingersink");
     }
-    LOGV ("add icbandroidvideosink to playbin");
+    LOGV ("add surfaceflingersink to playbin");
     mAudioBin = gst_element_factory_make ("audioflingersink", NULL);
     if (!mAudioBin) {
       LOGE ("Can't create audioflingersink");
@@ -187,7 +187,6 @@ GstDriver::setup ()
   gst_element_set_state (mPlaybin, GST_STATE_NULL);
   mState = GSTDRIVER_STATE_INITIALIZED;
 }
-
 
 void
 GstDriver::setDataSource (const char *url)
@@ -369,8 +368,8 @@ void
 GstDriver::setVideoSurface (const sp < ISurface > &surface)
 {
   LOGV ("set surface to videosink");
-  g_object_set (G_OBJECT (mVideoBin), "surface", surface.get (),
-      (gchar *) NULL);
+  mSurface = surface;
+  g_object_set (G_OBJECT (mVideoBin), "surface", surface.get(), (gchar *) NULL);
 }
 
 bool
@@ -441,6 +440,7 @@ GstDriver::start ()
     case GSTDRIVER_STATE_ERROR:
     case GSTDRIVER_STATE_END:
     {
+      LOGD("We are in IDLE/INITIALIZED/STOPPPED/ERROR/END: %d", mState);
       GstPlayer *parent = (GstPlayer *) mparent;
       if (parent) {
         parent->sendEvent (MEDIA_ERROR, 0);
@@ -451,6 +451,7 @@ GstDriver::start ()
 
     case GSTDRIVER_STATE_COMPLETED:
     {
+      LOGD("We are in GSTDRIVER_STATE_COMPLETED");
       gint64 duration, position;
       duration = getDuration ();
       position = getPosition ();
@@ -462,14 +463,19 @@ GstDriver::start ()
     case GSTDRIVER_STATE_PREPARED:
     case GSTDRIVER_STATE_STARTED:
     case GSTDRIVER_STATE_PAUSED:
+    LOGD("We are in PREPARED/STARTED/PAUSED: %d", mState);
+      /* FIXME, twi says NOT 
+         HAVING THIS MAKES GENERATING THUMBNAILS DOGSLOW
+         no track means the sink is an AudioCache instance and the player is
+         being used to decode in memory
+      */ 
+
       if (mAudioOut->getTrack() == NULL) {
-        /* no track means the sink is an AudioCache instance and the player is
-         * being used to decode in memory
-         */
         g_object_set (mAudioBin, "sync", FALSE, NULL);
       } else {
         g_object_set (mAudioBin, "sync", TRUE, NULL);
       }
+ 
       mEos = false;
       gst_element_set_state (mPlaybin, GST_STATE_PLAYING);
       mState = GSTDRIVER_STATE_STARTED;

@@ -161,6 +161,7 @@ namespace android
   static gpointer do_loop (GstDriver *ed);
   GThread*        mMainThread;
   GSource*        mBusWatch;
+  sp<ISurface>    mSurface;
   };
 
 };                              // namespace android

@@ -43,7 +43,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_LDLIBS += -ldl -lpthread 
 
 LOCAL_MODULE:= libgstplayer
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := user
 
 #
 # define LOCAL_PRELINK_MODULE to false to not use pre-link map

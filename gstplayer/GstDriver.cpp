@@ -978,7 +978,6 @@ GstDriver::init_gstreamer ()
   char debug[PROPERTY_VALUE_MAX];
   char trace[PROPERTY_VALUE_MAX];
 
-
   argv = (char **) malloc (sizeof (char *) * argc);
   argv[0] = (char *) malloc (sizeof (char) * (strlen (str0) + 1));
   strcpy (argv[0], str0);
@@ -993,15 +992,7 @@ GstDriver::init_gstreamer ()
   property_get ("persist.gst.trace", trace, "/dev/console");
   LOGV ("persist.gst.trace property %s", trace);
   LOGV ("route the trace to %s", trace);
-  int fd_trace = open (trace, O_RDWR);  
-  
-  
-  if (fd_trace != -1) {
-    dup2 (fd_trace, 0);
-    dup2 (fd_trace, 1);
-    dup2 (fd_trace, 2);
-    close (fd_trace);
-  }
+  setenv ("GST_DEBUG_FILE", trace, 1);
 
   LOGV ("gstreamer init check");
   // init gstreamer       

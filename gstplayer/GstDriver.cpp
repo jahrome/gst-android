@@ -1003,11 +1003,6 @@ GstDriver::init_gstreamer ()
       g_error_free (err);
     }
   }
-
-  mGst_info_start_time = gst_util_get_timestamp ();
-  gst_debug_remove_log_function (debug_log);
-  gst_debug_add_log_function (debug_log, this);
-  gst_debug_remove_log_function (gst_debug_log_default);
 }
 
 // The Client in the MetadataPlayerService calls this method on

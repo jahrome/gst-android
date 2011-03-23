@@ -25,6 +25,7 @@ LOCAL_CFLAGS := \
 LOCAL_SHARED_LIBRARIES := \
 	libgstreamer-0.10	\
 	libgstbase-0.10		\
+	libgstpbutils-0.10 \
 	libglib-2.0		\
 	libgthread-2.0		\
 	libgmodule-2.0		\

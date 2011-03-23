@@ -24,6 +24,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "GstDriver.h"
 #include "GstPlayer.h"
 #include <gst/video/video.h>
+#include <gst/pbutils/pbutils.h>
 #include <fcntl.h>
 #include <media/Metadata.h>
 
@@ -849,7 +850,11 @@ GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
           }
 
           if (gst_structure_has_name (gstruct, "missing-plugin")) {
-            LOGV ("a plugin is missing send error message");
+            gchar *detail;
+
+            detail = gst_missing_plugin_message_get_installer_detail (msg);
+            LOGV ("a plugin is missing send error message %s", detail);
+            g_free (detail);
             if (parent) {
               parent->sendEvent (MEDIA_ERROR, 0);
             }

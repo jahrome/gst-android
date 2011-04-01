@@ -87,11 +87,11 @@ LOCAL_CFLAGS := \
 LOCAL_LDLIBS := -ldl -lpthread 
 
 LOCAL_MODULE:= libgstmetadataretriever
-LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_TAGS := eng debug
 
 LOCAL_PRELINK_MODULE := false 
 
-#include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_SHARED_LIBRARY)
 
 
 #

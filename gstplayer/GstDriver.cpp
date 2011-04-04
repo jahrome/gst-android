@@ -970,24 +970,12 @@ GstDriver::init_gstreamer ()
 {
   // do the init of gstreamer there
   GError *err = NULL;
-
-  int argc = 3;
-  char **argv;
-  char str0[] = "";
-  char str2[] = "";
   char debug[PROPERTY_VALUE_MAX];
   char trace[PROPERTY_VALUE_MAX];
 
-  argv = (char **) malloc (sizeof (char *) * argc);
-  argv[0] = (char *) malloc (sizeof (char) * (strlen (str0) + 1));
-  strcpy (argv[0], str0);
-  argv[2] = (char *) malloc (sizeof (char) * (strlen (str2) + 1));
-  strcpy (argv[2], str2);
-
   property_get ("persist.gst.debug", debug, "0");
   LOGV ("persist.gst.debug property %s", debug);
-  argv[1] = (char *) malloc (sizeof (char) * (strlen (debug) + 1));
-  strcpy (argv[1], debug);
+  setenv ("GST_DEBUG", debug, 1);
 
   property_get ("persist.gst.trace", trace, "/dev/console");
   LOGV ("persist.gst.trace property %s", trace);
@@ -995,8 +983,7 @@ GstDriver::init_gstreamer ()
   setenv ("GST_DEBUG_FILE", trace, 1);
 
   LOGV ("gstreamer init check");
-  // init gstreamer       
-  if (!gst_init_check (&argc, &argv, &err)) {
+  if (!gst_init_check (NULL, NULL, &err)) {
     LOGE ("Could not initialize GStreamer: %s\n",
         err ? err->message : "unknown error occurred");
     if (err) {

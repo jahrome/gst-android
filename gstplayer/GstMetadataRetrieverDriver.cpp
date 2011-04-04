@@ -666,47 +666,22 @@ void GstMetadataRetrieverDriver::getAlbumArt(guint8 **data, guint64 *size)
 
 void GstMetadataRetrieverDriver::init_gstreamer() 
 {
-	// do the init of gstreamer there
 	GError *err = NULL;
-
-	int argc=3;
-	char **argv;
-	char str0[] =  "";
-	char str2[] =  "";
 	char debug[PROPERTY_VALUE_MAX];
 	char trace[PROPERTY_VALUE_MAX];
 
-
-	argv = (char **)malloc(sizeof(char *) * argc);          
-	argv[0] = (char *) malloc( sizeof(char) * (strlen(str0) + 1));        
-	strcpy( argv[0], str0);     
-	argv[2] = (char *) malloc( sizeof(char) * (strlen(str2) + 1));        
-	strcpy( argv[2], str2);     
-
-    property_get("persist.gst.debug", debug, "0");
+	property_get("persist.gst.debug", debug, "0");
 	LOGV("persist.gst.debug property %s", debug);
-	argv[1] = (char *) malloc( sizeof(char) * (strlen(debug) + 1));         
-	strcpy( argv[1], debug);  
-	
+	setenv ("GST_DEBUG", debug, true);
+
 	property_get("persist.gst.trace", trace, "/dev/console");
 	LOGV("persist.gst.trace property %s", trace);
 	LOGV("route the trace to %s", trace);
-	int fd_trace = open(trace, O_RDWR);
-	if(fd_trace != -1) {
-		dup2(fd_trace, 0);
-		dup2(fd_trace, 1);
-		dup2(fd_trace, 2);
-		close(fd_trace);
-	}
-	
-	mGst_info_start_time = gst_util_get_timestamp ();
-	gst_debug_remove_log_function(debug_log);
-	gst_debug_add_log_function(debug_log, this);
-	gst_debug_remove_log_function(gst_debug_log_default);
+	setenv ("GST_DEBUG_FILE", trace, true);
 
 	LOGV("gstreamer init check");
-	// init gstreamer 	
-	if(!gst_init_check (&argc, &argv, &err))
+
+	if(!gst_init_check (NULL, NULL, &err))
 	{
 		LOGE ("Could not initialize GStreamer: %s\n", err ? err->message : "unknown error occurred");
 		if (err) {

@@ -42,6 +42,10 @@ static GstStaticCaps static_have_video_caps = GST_STATIC_CAPS ("video/x-raw-yuv;
 GstMetadataRetrieverDriver::GstMetadataRetrieverDriver():
 	mPipeline(NULL),
 	mAppsrc(NULL),
+    mColorTransform(NULL),
+    mPlayBin(NULL),
+    mAppSink(NULL),
+    mAudioSink(NULL),
 	mUri(NULL),
 	mTag_list(NULL),
 	mFdSrcOffset_min(0), mFdSrcOffset_max(0), 
@@ -87,6 +91,38 @@ GstMetadataRetrieverDriver::~GstMetadataRetrieverDriver()
 	}
 }
 
+void
+GstMetadataRetrieverDriver::cb_newpad(GstElement *mPlayBin, GstPad *pad,
+                                      GstMetadataRetrieverDriver *data)
+{
+    GstCaps *caps;
+    GstStructure *str;
+    gboolean err = true;
+
+    caps = gst_pad_get_caps (pad);
+    str  = gst_caps_get_structure (caps, 0);
+    if (g_strrstr (gst_structure_get_name (str), "audio")) {
+        LOGI ("cb_newpad Called for an audio pad");
+        data->mAudioSink = gst_element_factory_make ("fakesink", NULL);
+        gst_bin_add (GST_BIN (data->mPipeline), data->mAudioSink);
+        gst_element_set_state (data->mAudioSink, GST_STATE_PAUSED);
+        err = gst_element_link (data->mPlayBin, data->mAudioSink);
+    }
+    else
+    if (g_strrstr (gst_structure_get_name (str), "video")) {
+        LOGI ("cb_newpad Called for a video pad");
+        err = gst_element_link (data->mPlayBin, data->mColorTransform);
+    }
+
+    if (!err)
+        LOGE ("Could not link %s with %s", GST_ELEMENT_NAME (data->mPlayBin),
+              GST_ELEMENT_NAME (data->mAudioSink?
+                                data->mAudioSink : data->mColorTransform));
+
+    gst_caps_unref (caps);
+
+    return;
+}
 
 void GstMetadataRetrieverDriver::setup(int mode)
 {
@@ -95,19 +131,40 @@ void GstMetadataRetrieverDriver::setup(int mode)
 	mMode = mode;
 
 	if(mMode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
-		description = g_strdup_printf("uridecodebin uri=%s name=src ! icbtransform ! appsink name=sink caps=\"video/x-raw-rgb,bpp=16\" enable-last-buffer=true", mUri);
+		LOGI("Called in METADATA_MODE_FRAME_CAPTURE_ONLY mode");
+
+		mPipeline		= gst_pipeline_new ("pipeline");
+		mColorTransform	= gst_element_factory_make ("ffmpegcolorspace", NULL);
+		mPlayBin		= gst_element_factory_make ("uridecodebin", "src");
+		mAppSink		= gst_element_factory_make("appsink", "sink");
+
+		g_object_set (G_OBJECT (mPlayBin), "uri", mUri, NULL);
+		g_object_set (G_OBJECT (mAppSink), "enable-last-buffer", "true", NULL);
+		g_signal_connect (mPlayBin, "pad-added", G_CALLBACK (cb_newpad),
+							this);
+
+		gst_bin_add_many (GST_BIN (mPipeline), mPlayBin, mColorTransform,
+							mAppSink, NULL);
+
+		if (!gst_element_link (mColorTransform, mAppSink))
+			LOGE("Failed to link %s to %s",
+					GST_ELEMENT_NAME (mColorTransform),
+					GST_ELEMENT_NAME (mAppSink));
+
+		gst_element_set_state (mPlayBin,        GST_STATE_PAUSED);
+		gst_element_set_state (mAppSink,        GST_STATE_PAUSED);
+		gst_element_set_state (mColorTransform, GST_STATE_PAUSED);
+
 	} else {
 		description = g_strdup_printf("uridecodebin uri=%s name=src ! fakesink name=sink", mUri);
+		mPipeline = gst_parse_launch(description, &error);
 	}
-
-	LOGV("create pipeline");
-	mPipeline = gst_parse_launch(description, &error);
 
 	if(!mPipeline)	{
 		LOGE("can't create pipeline");
 		return;
 	}
-	LOGV("pipeline creation: %s", gst_element_get_name(mPipeline));
+	LOGV("pipeline creation: %s", GST_ELEMENT_NAME (mPipeline));
 
 	// verbose info (as gst-launch -v)
 	// Activate the trace with the command: "setprop persist.gst.verbose 1"
@@ -119,7 +176,8 @@ void GstMetadataRetrieverDriver::setup(int mode)
 		g_signal_connect (mPipeline, "deep_notify",
 		        G_CALLBACK (gst_object_default_deep_notify), NULL);
 	}
-	
+
+	//gst_element_set_state (mPipeline, GST_STATE_NULL);
 	mState = GST_STATE_NULL;
 }
 
@@ -366,13 +424,11 @@ void GstMetadataRetrieverDriver::prepareSync()
 	}
 
 	bus = gst_pipeline_get_bus (GST_PIPELINE(mPipeline));
-	gst_element_set_state(mPipeline, GST_STATE_READY);
-	
 	gst_element_set_state(mPipeline, GST_STATE_PAUSED);
 
 	message = gst_bus_timed_pop_filtered(bus, PREPARE_SYNC_TIMEOUT, message_filter);
 	
-//	mState = GST_STATE_PAUSED;
+	mState = GST_STATE_PAUSED;
 
 	while(message != NULL) {
 		switch(GST_MESSAGE_TYPE(message)) {

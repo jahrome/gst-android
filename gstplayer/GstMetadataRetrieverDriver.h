@@ -50,9 +50,18 @@ public:
 	void getAlbumArt(guint8 **data, guint64 *size);
 	void getFrameRate(int* framerate);
 
+	static
+	void cb_newpad(GstElement *mPlayBin, GstPad *pad,
+					GstMetadataRetrieverDriver *data);
+
 private:
 	GstElement* mPipeline;
 	GstElement* mAppsrc;
+	GstElement* mColorTransform;
+	GstElement* mPlayBin;
+	GstElement* mAppSink;
+	GstElement* mAudioSink;
+
 	gchar*		mUri;
 
 	static GstBusSyncReply bus_message(GstBus *bus, GstMessage * msg, gpointer data);

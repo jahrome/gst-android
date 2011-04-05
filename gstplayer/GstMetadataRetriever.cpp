@@ -86,7 +86,7 @@ status_t GstMetadataRetriever::setDataSource(int fd, int64_t offset, int64_t len
     mGstDriver->prepareSync();
 	
 	status = mGstDriver->getStatus();
-	LOGV("GstMetadataRetriever setDataSource %s", (status == GST_STATE_PAUSED)? "OK": "not correct state");
+	LOGV("GstMetadataRetriever setDataSource %s:%d", (status == GST_STATE_PAUSED)? "OK": "not correct state", status);
 	if(status != GST_STATE_PAUSED)
 		return UNKNOWN_ERROR;
 
@@ -108,6 +108,7 @@ status_t GstMetadataRetriever::setMode(int mode)
 		if (!mLocked) {
 			LOGV("GstMetadataRetriever setMode activate video protection");
 			g_static_mutex_lock (&GstMetadataRetriever_mutex);
+			LOGV("Lock on GstMetadataRetriever acquired");
 			mLocked = 1 ;
 		} else {
 			LOGV("GstMetadataRetriever::setMode video protection already activated");
@@ -186,12 +187,19 @@ MediaAlbumArt* GstMetadataRetriever::extractAlbumArt()
 
 	mGstDriver->getAlbumArt(&data, &size);
 
+	LOGV("From extract AlbumArt: Data:%d Size:%d\n", data, size);
 	if(data && size) {
 		MediaAlbumArt* albumArt = new MediaAlbumArt();
 		albumArt->mSize = size;
         albumArt->mData = new uint8_t[size];
 		memcpy(albumArt->mData, data, size);
 		return albumArt; // must free by caller
+	}
+
+	if (mLocked) {
+		LOGV("No AlbumArt data, releasing video protection lock");
+		g_static_mutex_unlock(&GstMetadataRetriever_mutex);
+		mLocked = 0;
 	}
 
 	return NULL;

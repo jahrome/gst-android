@@ -76,7 +76,7 @@ GstMetadataRetrieverDriver::~GstMetadataRetrieverDriver()
 	}
 
 	if(mPipeline) {	
-		LOGV("free pipeline %s", gst_element_get_name(mPipeline));
+		LOGV("free pipeline %s", GST_ELEMENT_NAME(mPipeline));
 		gst_element_set_state(mPipeline, GST_STATE_NULL);
 		gst_object_unref (mPipeline);
 		mPipeline = NULL;
@@ -605,7 +605,7 @@ void GstMetadataRetrieverDriver::quit()
 			gst_bus_set_flushing(bus, TRUE);
 			gst_object_unref (bus);
 		}
-		LOGV("free pipeline %s", gst_element_get_name(mPipeline));
+		LOGV("free pipeline %s", GST_ELEMENT_NAME(mPipeline));
 		state = gst_element_set_state(mPipeline, GST_STATE_NULL);
 		LOGV("set pipeline state to NULL: %d (0:Failure, 1:Success, 2:Async, 3:NO_PREROLL)", state);
 		gst_object_unref (mPipeline);

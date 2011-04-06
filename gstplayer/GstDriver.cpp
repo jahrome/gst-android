@@ -69,7 +69,7 @@ GstDriver::~GstDriver ()
   LOGV ("destructor");
 
   if (mPlaybin) {
-    LOGV ("free pipeline %s", gst_element_get_name (mPlaybin));
+    LOGV ("free pipeline %s", GST_ELEMENT_NAME (mPlaybin));
     gst_element_set_state (mPlaybin, GST_STATE_NULL);
     gst_object_unref (mPlaybin);
     mPlaybin = NULL;
@@ -123,7 +123,7 @@ GstDriver::setup ()
   if (!mPlaybin) {
     LOGE ("can't create playbin2");
   }
-  LOGV ("playbin2 creation: %s", gst_element_get_name (mPlaybin));
+  LOGV ("playbin2 creation: %s", GST_ELEMENT_NAME (mPlaybin));
 
   // verbose info (as gst-launch -v)
   // Activate the trace with the command: "setprop persist.gst.verbose 1"
@@ -626,7 +626,7 @@ GstDriver::quit ()
       gst_bus_set_flushing (bus, TRUE);
       gst_object_unref (bus);
     }
-    LOGV ("free pipeline %s", gst_element_get_name (mPlaybin));
+    LOGV ("free pipeline %s", GST_ELEMENT_NAME (mPlaybin));
     state = gst_element_set_state (mPlaybin, GST_STATE_NULL);
     LOGV ("set pipeline state to NULL: %d (0:Failure, 1:Success, 2:Async, 3:NO_PREROLL)", state);
     gst_object_unref (mPlaybin);

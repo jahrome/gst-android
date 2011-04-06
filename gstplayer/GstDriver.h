@@ -59,7 +59,7 @@ namespace android
     void quit ();
     gint64 getPosition ();
     gint64 getDuration ();
-    void setEos(gint64 position);
+    void setEos (gint64 position);
     int getStatus ();
     void getVideoSize (int *width, int *height);
     void setVolume (float left, float right);
@@ -143,25 +143,25 @@ namespace android
         GObject * object, GstDebugMessage * message, gpointer data);
 
     gboolean mPausedByUser;     /* false if paused by buffering logic. user pausing takes precedent */
-    
-	gint64	 mDuration;
 
-	enum GstDriverPlaybackType 
-	{
-		GSTDRIVER_PLAYBACK_TYPE_UNKNOWN,
-		GSTDRIVER_PLAYBACK_TYPE_LOCAL_FILE,
-		GSTDRIVER_PLAYBACK_TYPE_RTSP,
-		GSTDRIVER_PLAYBACK_TYPE_HTTP
-	};
+    gint64 mDuration;
 
-	int		mPlaybackType;
+    enum GstDriverPlaybackType
+    {
+      GSTDRIVER_PLAYBACK_TYPE_UNKNOWN,
+      GSTDRIVER_PLAYBACK_TYPE_LOCAL_FILE,
+      GSTDRIVER_PLAYBACK_TYPE_RTSP,
+      GSTDRIVER_PLAYBACK_TYPE_HTTP
+    };
 
-  GMainContext*   mMainCtx;
-  GMainLoop*      mMainLoop;
-  static gpointer do_loop (GstDriver *ed);
-  GThread*        mMainThread;
-  GSource*        mBusWatch;
-  sp<ISurface>    mSurface;
+    int mPlaybackType;
+
+    GMainContext *mMainCtx;
+    GMainLoop *mMainLoop;
+    static gpointer do_loop (GstDriver * ed);
+    GThread *mMainThread;
+    GSource *mBusWatch;
+      sp < ISurface > mSurface;
   };
 
 };                              // namespace android

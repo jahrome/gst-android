@@ -25,84 +25,89 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <utils/Log.h>
 #include <media/mediametadataretriever.h>
 
-namespace android {
-
-
-class GstMetadataRetrieverDriver
+namespace android
 {
-public:
-	GstMetadataRetrieverDriver();
-	~GstMetadataRetrieverDriver();
 
-    void setup(int mode);
-    void setDataSource(const char* url);
-	void setFdDataSource(int fd, gint64 offset, gint64 length);
-    void prepareSync();
-    void seekSync(gint64 p);
-    void quit();
-    gint64 getPosition();
-    gint64 getDuration();
-    int	 getStatus();
-	void getVideoSize(int* width, int* height);
-    void endOfData();
-	gchar* getMetadata(gchar* tag);
-	void getCaptureFrame(guint8 **data);
-	void getAlbumArt(guint8 **data, guint64 *size);
-	void getFrameRate(int* framerate);
 
-	static
-	void cb_newpad(GstElement *mPlayBin, GstPad *pad,
-					GstMetadataRetrieverDriver *data);
+  class GstMetadataRetrieverDriver
+  {
+  public:
+    GstMetadataRetrieverDriver ();
+    ~GstMetadataRetrieverDriver ();
 
-private:
-	GstElement* mPipeline;
-	GstElement* mAppsrc;
-	GstElement* mColorTransform;
-    GstElement* mScaler;
-	GstElement* mPlayBin;
-	GstElement* mAppSink;
-	GstElement* mAudioSink;
+    void setup (int mode);
+    void setDataSource (const char *url);
+    void setFdDataSource (int fd, gint64 offset, gint64 length);
+    void prepareSync ();
+    void seekSync (gint64 p);
+    void quit ();
+    gint64 getPosition ();
+    gint64 getDuration ();
+    int getStatus ();
+    void getVideoSize (int *width, int *height);
+    void endOfData ();
+    gchar *getMetadata (gchar * tag);
+    void getCaptureFrame (guint8 ** data);
+    void getAlbumArt (guint8 ** data, guint64 * size);
+    void getFrameRate (int *framerate);
 
-	gchar*		mUri;
+    static
+        void cb_newpad (GstElement * mPlayBin, GstPad * pad,
+        GstMetadataRetrieverDriver * data);
 
-	static GstBusSyncReply bus_message(GstBus *bus, GstMessage * msg, gpointer data);
-	
-	GstTagList *	mTag_list;
+  private:
+      GstElement * mPipeline;
+    GstElement *mAppsrc;
+    GstElement *mColorTransform;
+    GstElement *mScaler;
+    GstElement *mPlayBin;
+    GstElement *mAppSink;
+    GstElement *mAudioSink;
 
-	void			parseMetadataInfo();
+    gchar *mUri;
 
-	guint64			mFdSrcOffset_min;
-	guint64			mFdSrcOffset_max;
-	guint64			mFdSrcOffset_current;
-	gint			mFd;
-	
+    static GstBusSyncReply bus_message (GstBus * bus, GstMessage * msg,
+        gpointer data);
 
-	static gboolean have_video_caps (GstElement * uridecodebin, GstCaps * caps);
-	static gboolean are_audio_caps (GstElement * uridecodebin, GstCaps * caps);
-	static gboolean are_video_caps (GstElement * uridecodebin, GstCaps * caps);
+    GstTagList *mTag_list;
 
-	static gboolean autoplug_continue (GstElement* object, GstPad* pad, GstCaps* caps, GstMetadataRetrieverDriver* ed);
+    void parseMetadataInfo ();
 
-	static void		source_changed_cb (GObject *obj, GParamSpec *pspec, GstMetadataRetrieverDriver* ed);
-	static void		need_data (GstElement * object, guint size, GstMetadataRetrieverDriver* ed);
-	static gboolean	seek_data (GstElement * object, guint64 offset, GstMetadataRetrieverDriver* ed);
+    guint64 mFdSrcOffset_min;
+    guint64 mFdSrcOffset_max;
+    guint64 mFdSrcOffset_current;
+    gint mFd;
 
-	int				mState;
 
-	gboolean		mHaveStreamVideo;
+    static gboolean have_video_caps (GstElement * uridecodebin, GstCaps * caps);
+    static gboolean are_audio_caps (GstElement * uridecodebin, GstCaps * caps);
+    static gboolean are_video_caps (GstElement * uridecodebin, GstCaps * caps);
 
-	GstBuffer		*mAlbumArt;
+    static gboolean autoplug_continue (GstElement * object, GstPad * pad,
+        GstCaps * caps, GstMetadataRetrieverDriver * ed);
 
-	void			init_gstreamer();
-	GstClockTime    mGst_info_start_time;
-	static void		debug_log (GstDebugCategory * category, GstDebugLevel level,
-							const gchar * file, const gchar * function, gint line,
-							GObject * object, GstDebugMessage * message, gpointer data);
+    static void source_changed_cb (GObject * obj, GParamSpec * pspec,
+        GstMetadataRetrieverDriver * ed);
+    static void need_data (GstElement * object, guint size,
+        GstMetadataRetrieverDriver * ed);
+    static gboolean seek_data (GstElement * object, guint64 offset,
+        GstMetadataRetrieverDriver * ed);
 
-	int					mMode;
-};
+    int mState;
 
-}; // namespace android
+    gboolean mHaveStreamVideo;
 
-#endif   /* ----- #ifndef GST_METADATARETRIEVER_DRIVER_INC  ----- */
+    GstBuffer *mAlbumArt;
 
+    void init_gstreamer ();
+    GstClockTime mGst_info_start_time;
+    static void debug_log (GstDebugCategory * category, GstDebugLevel level,
+        const gchar * file, const gchar * function, gint line,
+        GObject * object, GstDebugMessage * message, gpointer data);
+
+    int mMode;
+  };
+
+};                              // namespace android
+
+#endif /* ----- #ifndef GST_METADATARETRIEVER_DRIVER_INC  ----- */

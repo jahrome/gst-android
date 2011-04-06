@@ -25,304 +25,310 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "GstMetadataRetriever.h"
 #include <utils/Log.h>
 
-namespace android {
-
-static GStaticMutex GstMetadataRetriever_mutex = G_STATIC_MUTEX_INIT;
-
-GstMetadataRetriever::GstMetadataRetriever()
+namespace android
 {
-	mMode = METADATA_MODE_METADATA_RETRIEVAL_ONLY | METADATA_MODE_FRAME_CAPTURE_ONLY;
-	mLocked = 0 ;
 
-	LOGV("GstMetadataRetriever constructor");
-	//g_static_mutex_lock (&GstMetadataRetriever_mutex);
-	mGstDriver = new GstMetadataRetrieverDriver();
-	LOGV("GstMetadataRetriever constructor exit");
-}
+  static GStaticMutex GstMetadataRetriever_mutex = G_STATIC_MUTEX_INIT;
 
-GstMetadataRetriever::~GstMetadataRetriever()
-{
-	LOGV("GstMetadataRetriever destructor");
-    mGstDriver->quit(); 
-	if(mGstDriver) {
-		delete mGstDriver;
-	}
-	mGstDriver = NULL;
-	if (mLocked) {
-		LOGV("GstMetadataRetriever destructor deactivate video protection");
-		g_static_mutex_unlock(&GstMetadataRetriever_mutex);
-	}
-}
-	
+    GstMetadataRetriever::GstMetadataRetriever ()
+  {
+    mMode =
+        METADATA_MODE_METADATA_RETRIEVAL_ONLY |
+        METADATA_MODE_FRAME_CAPTURE_ONLY;
+    mLocked = 0;
 
-status_t GstMetadataRetriever::setDataSource(const char *url)
-{
-	status_t ret = OK;
-	int status = 0;
+    LOGV ("GstMetadataRetriever constructor");
+    //g_static_mutex_lock (&GstMetadataRetriever_mutex);
+    mGstDriver = new GstMetadataRetrieverDriver ();
+    LOGV ("GstMetadataRetriever constructor exit");
+  }
 
-	LOGV("GstMetadataRetriever setDataSource %s", url);
+  GstMetadataRetriever::~GstMetadataRetriever ()
+  {
+    LOGV ("GstMetadataRetriever destructor");
+    mGstDriver->quit ();
+    if (mGstDriver) {
+      delete mGstDriver;
+    }
+    mGstDriver = NULL;
+    if (mLocked) {
+      LOGV ("GstMetadataRetriever destructor deactivate video protection");
+      g_static_mutex_unlock (&GstMetadataRetriever_mutex);
+    }
+  }
 
-	mGstDriver->setDataSource(url);	
-	mGstDriver->setup(mMode);
-	mGstDriver->prepareSync();
 
-	status  = mGstDriver->getStatus();
+  status_t GstMetadataRetriever::setDataSource (const char *url)
+  {
+    status_t ret = OK;
+    int status = 0;
 
-	LOGV("GstMetadataRetriever setDataSource %s", (status == GST_STATE_PAUSED)? "OK": "not correct state");
-	if(status != GST_STATE_PAUSED)
-		ret = UNKNOWN_ERROR;
+    LOGV ("GstMetadataRetriever setDataSource %s", url);
 
-	return ret;
-}
+    mGstDriver->setDataSource (url);
+    mGstDriver->setup (mMode);
+    mGstDriver->prepareSync ();
 
-status_t GstMetadataRetriever::setDataSource(int fd, int64_t offset, int64_t length)
-{
-	status_t ret = OK;
-	int status = 0;
+    status = mGstDriver->getStatus ();
 
-	LOGV("GstMetadataRetriever setDataSource fd=%d offset=%lld lenght=%lld", fd, offset, length);
-	mGstDriver->setFdDataSource(fd, offset, length);	
-	mGstDriver->setup(mMode);
-    mGstDriver->prepareSync();
-	
-	status = mGstDriver->getStatus();
-	LOGV("GstMetadataRetriever setDataSource %s:%d", (status == GST_STATE_PAUSED)? "OK": "not correct state", status);
-	if(status != GST_STATE_PAUSED)
-		return UNKNOWN_ERROR;
+    LOGV ("GstMetadataRetriever setDataSource %s",
+        (status == GST_STATE_PAUSED) ? "OK" : "not correct state");
+    if (status != GST_STATE_PAUSED)
+      ret = UNKNOWN_ERROR;
 
     return ret;
-}
+  }
+
+  status_t GstMetadataRetriever::setDataSource (int fd, int64_t offset,
+      int64_t length)
+  {
+    status_t ret = OK;
+    int status = 0;
+
+    LOGV ("GstMetadataRetriever setDataSource fd=%d offset=%lld lenght=%lld",
+        fd, offset, length);
+    mGstDriver->setFdDataSource (fd, offset, length);
+    mGstDriver->setup (mMode);
+    mGstDriver->prepareSync ();
+
+    status = mGstDriver->getStatus ();
+    LOGV ("GstMetadataRetriever setDataSource %s:%d",
+        (status == GST_STATE_PAUSED) ? "OK" : "not correct state", status);
+    if (status != GST_STATE_PAUSED)
+      return UNKNOWN_ERROR;
+
+    return ret;
+  }
 
 
-status_t GstMetadataRetriever::setMode(int mode)
-{
-	LOGV("GstMetadataRetriever setMode mode=%d", mode);
-	if (mode < METADATA_MODE_NOOP ||
-        mode > METADATA_MODE_FRAME_CAPTURE_AND_METADATA_RETRIEVAL) 
-	{
-	   LOGE("set to invalid mode (%d)", mode);
-       return BAD_VALUE;
-	}
-	
-	if (mode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
-		if (!mLocked) {
-			LOGV("GstMetadataRetriever setMode activate video protection");
-			g_static_mutex_lock (&GstMetadataRetriever_mutex);
-			LOGV("Lock on GstMetadataRetriever acquired");
-			mLocked = 1 ;
-		} else {
-			LOGV("GstMetadataRetriever::setMode video protection already activated");
-		}
-	} else { /* ! mode & METADATA_MODE_FRAME_CAPTURE_ONLY */
-		if (mLocked) {
-			LOGV("GstMetadataRetriever::setMode deactivate video protection");
-			g_static_mutex_unlock (&GstMetadataRetriever_mutex);
-			mLocked = 0 ;
-		} else {
-			LOGV("GstMetadataRetriever::setMode video protection already deactivated");
-		}
-	}
-	mMode = mode;
-	return OK;
-}
+  status_t GstMetadataRetriever::setMode (int mode)
+  {
+    LOGV ("GstMetadataRetriever setMode mode=%d", mode);
+    if (mode < METADATA_MODE_NOOP ||
+        mode > METADATA_MODE_FRAME_CAPTURE_AND_METADATA_RETRIEVAL) {
+      LOGE ("set to invalid mode (%d)", mode);
+      return BAD_VALUE;
+    }
 
-status_t GstMetadataRetriever::getMode(int* mode) const
-{
-	*mode = mMode;
-	LOGV("GstMetadataRetriever getMode mode%d", *mode);
-	return OK;
-}
+    if (mode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
+      if (!mLocked) {
+        LOGV ("GstMetadataRetriever setMode activate video protection");
+        g_static_mutex_lock (&GstMetadataRetriever_mutex);
+        LOGV ("Lock on GstMetadataRetriever acquired");
+        mLocked = 1;
+      } else {
+        LOGV ("GstMetadataRetriever::setMode video protection already activated");
+      }
+    } else {                    /* ! mode & METADATA_MODE_FRAME_CAPTURE_ONLY */
+      if (mLocked) {
+        LOGV ("GstMetadataRetriever::setMode deactivate video protection");
+        g_static_mutex_unlock (&GstMetadataRetriever_mutex);
+        mLocked = 0;
+      } else {
+        LOGV ("GstMetadataRetriever::setMode video protection already deactivated");
+      }
+    }
+    mMode = mode;
+    return OK;
+  }
 
-VideoFrame* GstMetadataRetriever::captureFrame()
-{
-	int width, height, size;
-	VideoFrame *vFrame = NULL;
-	gint64 duration;
+  status_t GstMetadataRetriever::getMode (int *mode) const
+  {
+    *mode = mMode;
+    LOGV ("GstMetadataRetriever getMode mode%d", *mode);
+    return OK;
+  }
 
-	LOGV("GstMetadataRetriever captureFrame");
-	
-	if (!mLocked) {
-		LOGE("GstMetadataRetriever captureFrame video protection not activated => ERROR");
-		return (NULL);
-	}
-	mGstDriver->getVideoSize(&width, &height);
+  VideoFrame *GstMetadataRetriever::captureFrame ()
+  {
+    int width, height, size;
+    VideoFrame *vFrame = NULL;
+    gint64 duration;
 
-	LOGV("GstMetadataRetriever captureFrame get video size %d x %d", width, height);
-	// compute data size
-	// FIXME: Check the Framebuffer color depth (if != RGB565)
-	size = width * height * 2; // RGB565
+    LOGV ("GstMetadataRetriever captureFrame");
 
-	duration = mGstDriver->getDuration();
-	if(duration) {
-		mGstDriver->seekSync(duration/20);
-	}
+    if (!mLocked) {
+      LOGE ("GstMetadataRetriever captureFrame video protection not activated => ERROR");
+      return (NULL);
+    }
+    mGstDriver->getVideoSize (&width, &height);
 
-	if(size > 0) {
-		vFrame = new VideoFrame();
+    LOGV ("GstMetadataRetriever captureFrame get video size %d x %d", width,
+        height);
+    // compute data size
+    // FIXME: Check the Framebuffer color depth (if != RGB565)
+    size = width * height * 2;  // RGB565
 
-		vFrame->mWidth = width;
-    	vFrame->mHeight = height;
-    	vFrame->mDisplayWidth  = width;
-    	vFrame->mDisplayHeight = height;
-    	vFrame->mSize = size;
-		vFrame->mData = 0;
+    duration = mGstDriver->getDuration ();
+    if (duration) {
+      mGstDriver->seekSync (duration / 20);
+    }
 
-		mGstDriver->getCaptureFrame(&(vFrame->mData));
+    if (size > 0) {
+      vFrame = new VideoFrame ();
 
-		if(vFrame->mData == 0) {
-			LOGV("GstMetadataRetriever cant' allocate memory for video frame");
-			delete vFrame;
-			vFrame = NULL;
-		}
-	}
+      vFrame->mWidth = width;
+      vFrame->mHeight = height;
+      vFrame->mDisplayWidth = width;
+      vFrame->mDisplayHeight = height;
+      vFrame->mSize = size;
+      vFrame->mData = 0;
 
-	return vFrame;
-}
+      mGstDriver->getCaptureFrame (&(vFrame->mData));
 
-MediaAlbumArt* GstMetadataRetriever::extractAlbumArt()
-{
-	LOGV("GstMetadataRetriever extractAlbumArt");
-	guint8* data = NULL;
-	guint64 size = 0;
+      if (vFrame->mData == 0) {
+        LOGV ("GstMetadataRetriever cant' allocate memory for video frame");
+        delete vFrame;
+        vFrame = NULL;
+      }
+    }
 
-	mGstDriver->getAlbumArt(&data, &size);
+    return vFrame;
+  }
 
-	LOGV("From extract AlbumArt: Data:%d Size:%d\n", data, size);
-	if(data && size) {
-		MediaAlbumArt* albumArt = new MediaAlbumArt();
-		albumArt->mSize = size;
-        albumArt->mData = new uint8_t[size];
-		memcpy(albumArt->mData, data, size);
-		return albumArt; // must free by caller
-	}
+  MediaAlbumArt *GstMetadataRetriever::extractAlbumArt ()
+  {
+    LOGV ("GstMetadataRetriever extractAlbumArt");
+    guint8 *data = NULL;
+    guint64 size = 0;
 
-	if (mLocked) {
-		LOGV("No AlbumArt data, releasing video protection lock");
-		g_static_mutex_unlock(&GstMetadataRetriever_mutex);
-		mLocked = 0;
-	}
+    mGstDriver->getAlbumArt (&data, &size);
 
-	return NULL;
-}
+    LOGV ("From extract AlbumArt: Data:%d Size:%d\n", data, size);
+    if (data && size) {
+      MediaAlbumArt *albumArt = new MediaAlbumArt ();
+      albumArt->mSize = size;
+      albumArt->mData = new uint8_t[size];
+      memcpy (albumArt->mData, data, size);
+      return albumArt;          // must free by caller
+    }
 
-const char* GstMetadataRetriever::extractMetadata(int keyCode)
-{
-	char * tag;
-	char * ret;
-	int msec;
-	char* duration;
+    if (mLocked) {
+      LOGV ("No AlbumArt data, releasing video protection lock");
+      g_static_mutex_unlock (&GstMetadataRetriever_mutex);
+      mLocked = 0;
+    }
 
-	LOGV("GstMetadataRetriever keyCode=%d", keyCode);
+    return NULL;
+  }
 
-	switch (keyCode)
-	{
-		case METADATA_KEY_CD_TRACK_NUMBER:
-			tag = strdup(GST_TAG_TRACK_NUMBER);
-			break;
-		case METADATA_KEY_ALBUM:   
-			tag = strdup(GST_TAG_ALBUM);
-			break;		
-		case METADATA_KEY_AUTHOR:
-		case METADATA_KEY_ARTIST:
-			tag = strdup(GST_TAG_ARTIST);
-			break;
-		case METADATA_KEY_COMPOSER:
-			tag = strdup(GST_TAG_COMPOSER);
-			break;
-		case METADATA_KEY_YEAR:
-		case METADATA_KEY_DATE:
-			tag = strdup(GST_TAG_DATE);
-			break;
-		case METADATA_KEY_GENRE:
-			tag = strdup(GST_TAG_GENRE);
-			break;
-		case METADATA_KEY_TITLE:
-			tag = strdup(GST_TAG_TITLE);
-			break;
-		case METADATA_KEY_DURATION:
-		// Use Gst GetDuration instead of Tag one.
-			msec = mGstDriver->getDuration();	
-			duration = (char *)malloc(sizeof(char *)*55); 
-			sprintf(duration,"%d",msec);
-			return duration;
-			//	tag = strdup(GST_TAG_DURATION);
-			break;
-		case METADATA_KEY_NUM_TRACKS:
-			tag = strdup(GST_TAG_TRACK_COUNT);
-			break;
-		case METADATA_KEY_COMMENT:
-			tag = strdup(GST_TAG_COMMENT);
-			break;
-		case METADATA_KEY_COPYRIGHT:
-			tag = strdup(GST_TAG_COPYRIGHT);
-			break;
-		case METADATA_KEY_CODEC:
-			tag = strdup(GST_TAG_CODEC);
-			break;
-		case METADATA_KEY_BIT_RATE:
-			tag = strdup(GST_TAG_BITRATE);
-			break;
-		case METADATA_KEY_VIDEO_HEIGHT: 
-			{
-				int width, height;
-				char *res;
-				mGstDriver->getVideoSize(&width, &height);
-				res = (char *)malloc(sizeof(char)*55); 
-				sprintf(res,"%d",height);
-				return res;
-			}
-		case METADATA_KEY_VIDEO_WIDTH:
-			{
-				int width, height;
-				char *res;
-				mGstDriver->getVideoSize(&width, &height);
-				res = (char *)malloc(sizeof(char)*55); 
-				sprintf(res,"%d",width);
-				return res;
-			}
-		case METADATA_KEY_VIDEO_FORMAT:
-			tag = strdup(GST_TAG_VIDEO_CODEC);
-			break;
+  const char *GstMetadataRetriever::extractMetadata (int keyCode)
+  {
+    char *tag;
+    char *ret;
+    int msec;
+    char *duration;
 
-		case METADATA_KEY_FRAME_RATE:
-			{
-				int framerate;
-				char *res;
-				mGstDriver->getFrameRate(&framerate);
-				res = (char *)malloc(sizeof(char)*55); 
-				sprintf(res,"%d",framerate);
-				return res;
-			}
+    LOGV ("GstMetadataRetriever keyCode=%d", keyCode);
+
+    switch (keyCode) {
+      case METADATA_KEY_CD_TRACK_NUMBER:
+        tag = strdup (GST_TAG_TRACK_NUMBER);
+        break;
+      case METADATA_KEY_ALBUM:
+        tag = strdup (GST_TAG_ALBUM);
+        break;
+      case METADATA_KEY_AUTHOR:
+      case METADATA_KEY_ARTIST:
+        tag = strdup (GST_TAG_ARTIST);
+        break;
+      case METADATA_KEY_COMPOSER:
+        tag = strdup (GST_TAG_COMPOSER);
+        break;
+      case METADATA_KEY_YEAR:
+      case METADATA_KEY_DATE:
+        tag = strdup (GST_TAG_DATE);
+        break;
+      case METADATA_KEY_GENRE:
+        tag = strdup (GST_TAG_GENRE);
+        break;
+      case METADATA_KEY_TITLE:
+        tag = strdup (GST_TAG_TITLE);
+        break;
+      case METADATA_KEY_DURATION:
+        // Use Gst GetDuration instead of Tag one.
+        msec = mGstDriver->getDuration ();
+        duration = (char *) malloc (sizeof (char *) * 55);
+        sprintf (duration, "%d", msec);
+        return duration;
+        //      tag = strdup(GST_TAG_DURATION);
+        break;
+      case METADATA_KEY_NUM_TRACKS:
+        tag = strdup (GST_TAG_TRACK_COUNT);
+        break;
+      case METADATA_KEY_COMMENT:
+        tag = strdup (GST_TAG_COMMENT);
+        break;
+      case METADATA_KEY_COPYRIGHT:
+        tag = strdup (GST_TAG_COPYRIGHT);
+        break;
+      case METADATA_KEY_CODEC:
+        tag = strdup (GST_TAG_CODEC);
+        break;
+      case METADATA_KEY_BIT_RATE:
+        tag = strdup (GST_TAG_BITRATE);
+        break;
+      case METADATA_KEY_VIDEO_HEIGHT:
+      {
+        int width, height;
+        char *res;
+        mGstDriver->getVideoSize (&width, &height);
+        res = (char *) malloc (sizeof (char) * 55);
+        sprintf (res, "%d", height);
+        return res;
+      }
+      case METADATA_KEY_VIDEO_WIDTH:
+      {
+        int width, height;
+        char *res;
+        mGstDriver->getVideoSize (&width, &height);
+        res = (char *) malloc (sizeof (char) * 55);
+        sprintf (res, "%d", width);
+        return res;
+      }
+      case METADATA_KEY_VIDEO_FORMAT:
+        tag = strdup (GST_TAG_VIDEO_CODEC);
+        break;
+
+      case METADATA_KEY_FRAME_RATE:
+      {
+        int framerate;
+        char *res;
+        mGstDriver->getFrameRate (&framerate);
+        res = (char *) malloc (sizeof (char) * 55);
+        sprintf (res, "%d", framerate);
+        return res;
+      }
 #ifdef STECONF_ANDROID_VERSION_FROYO
-		case METADATA_KEY_WRITER:
-			tag = strdup(GST_TAG_COMPOSER);
-			break;
-		case METADATA_KEY_MIMETYPE:
-			tag = strdup(GST_TAG_CODEC);
-			break;
-		case METADATA_KEY_DISC_NUMBER:
-			tag = strdup(GST_TAG_ALBUM_VOLUME_NUMBER);
-			break;
-		case METADATA_KEY_ALBUMARTIST:
-			tag = strdup(GST_TAG_ALBUM_ARTIST);
-			break;			
+      case METADATA_KEY_WRITER:
+        tag = strdup (GST_TAG_COMPOSER);
+        break;
+      case METADATA_KEY_MIMETYPE:
+        tag = strdup (GST_TAG_CODEC);
+        break;
+      case METADATA_KEY_DISC_NUMBER:
+        tag = strdup (GST_TAG_ALBUM_VOLUME_NUMBER);
+        break;
+      case METADATA_KEY_ALBUMARTIST:
+        tag = strdup (GST_TAG_ALBUM_ARTIST);
+        break;
 #endif
-		case METADATA_KEY_IS_DRM_CRIPPLED:
-		case METADATA_KEY_RATING:
-		default:
-			LOGV("unsupported metadata keycode %d", keyCode);
-			return NULL;
-	}
+      case METADATA_KEY_IS_DRM_CRIPPLED:
+      case METADATA_KEY_RATING:
+      default:
+        LOGV ("unsupported metadata keycode %d", keyCode);
+        return NULL;
+    }
 
-	LOGV("GstMetadataRetriever send request for |%s| ", tag);
-	
-	
-	ret = mGstDriver->getMetadata(tag);
-	
-	LOGV("GstMetadataRetriever tag %s metadata %s", tag, ret);
-	g_free(tag);
+    LOGV ("GstMetadataRetriever send request for |%s| ", tag);
 
-	return ret;
-}
 
-}; // namespace android
+    ret = mGstDriver->getMetadata (tag);
+
+    LOGV ("GstMetadataRetriever tag %s metadata %s", tag, ret);
+    g_free (tag);
+
+    return ret;
+  }
+
+};                              // namespace android

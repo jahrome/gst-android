@@ -49,7 +49,7 @@ mAudioStreamType (0), mAudioFlingerGstId (0), mAudioFlinger (0),
 mAudioLeftVolume (1.0f), mAudioRightVolume (1.0f),
 mNbAudioStream (0), mNbAudioStreamError (0),
 mDuration (0), mPlaybackType (GSTDRIVER_PLAYBACK_TYPE_UNKNOWN),
-mMainCtx(NULL), mMainLoop(NULL), mMainThread(NULL), mBusWatch(NULL)
+mMainCtx (NULL), mMainLoop (NULL), mMainThread (NULL), mBusWatch (NULL)
 {
   LOGV ("constructor");
 
@@ -81,11 +81,12 @@ GstDriver::~GstDriver ()
   mState = GSTDRIVER_STATE_END;
 }
 
-GstStateChangeReturn
-GstDriver::wait_for_set_state (int timeout_msec)
+GstStateChangeReturn GstDriver::wait_for_set_state (int timeout_msec)
 {
-  GstMessage *msg;
-  GstStateChangeReturn ret = GST_STATE_CHANGE_FAILURE;
+  GstMessage *
+      msg;
+  GstStateChangeReturn
+      ret = GST_STATE_CHANGE_FAILURE;
 
   /* Wait for state change */
   msg = gst_bus_timed_pop_filtered (GST_ELEMENT_BUS (mPlaybin), timeout_msec * GST_MSECOND,     /* in nanosec */
@@ -101,8 +102,7 @@ GstDriver::wait_for_set_state (int timeout_msec)
   return ret;
 }
 
-gpointer
-GstDriver::do_loop (GstDriver * ed)
+gpointer GstDriver::do_loop (GstDriver * ed)
 {
   LOGV ("enter main loop");
   g_main_loop_run (ed->mMainLoop);
@@ -199,7 +199,7 @@ GstDriver::setDataSource (const char *url)
     strcat (uri, url);
     LOGV ("set uri to playbin %s", uri);
     g_object_set (G_OBJECT (mPlaybin), "uri", uri, (gchar *) NULL);
-	mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_LOCAL_FILE;
+    mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_LOCAL_FILE;
 
   } else {
     LOGV ("set uri to playbin %s", url);
@@ -209,11 +209,11 @@ GstDriver::setDataSource (const char *url)
           (gchar *) NULL);
       g_object_set (G_OBJECT (mPlaybin), "buffer-size", (gint) 500 * 1024,
           (gchar *) NULL);
-	  mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_HTTP;
+      mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_HTTP;
     }
-	if (strncasecmp (url, "rtsp", 4) == 0) {
-		mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_RTSP;
-	}
+    if (strncasecmp (url, "rtsp", 4) == 0) {
+      mPlaybackType = GSTDRIVER_PLAYBACK_TYPE_RTSP;
+    }
   }
 }
 
@@ -252,7 +252,7 @@ GstDriver::need_data (GstAppSrc * src, guint length, gpointer user_data)
 }
 
 /*static*/ gboolean
-GstDriver::seek_data (GstAppSrc * src, guint64 offset, gpointer user_data)
+    GstDriver::seek_data (GstAppSrc * src, guint64 offset, gpointer user_data)
 {
   UNUSED (src);
 
@@ -370,11 +370,11 @@ GstDriver::setVideoSurface (const sp < ISurface > &surface)
 {
   LOGV ("set surface to videosink");
   mSurface = surface;
-  g_object_set (G_OBJECT (mVideoBin), "surface", surface.get(), (gchar *) NULL);
+  g_object_set (G_OBJECT (mVideoBin), "surface", surface.get (),
+      (gchar *) NULL);
 }
 
-bool
-GstDriver::setAudioSink (sp < MediaPlayerInterface::AudioSink > audiosink)
+bool GstDriver::setAudioSink (sp < MediaPlayerInterface::AudioSink > audiosink)
 {
   if (audiosink == 0) {
     LOGE ("Error audio sink %p", audiosink.get ());
@@ -441,7 +441,7 @@ GstDriver::start ()
     case GSTDRIVER_STATE_ERROR:
     case GSTDRIVER_STATE_END:
     {
-      LOGD("We are in IDLE/INITIALIZED/STOPPPED/ERROR/END: %d", mState);
+      LOGD ("We are in IDLE/INITIALIZED/STOPPPED/ERROR/END: %d", mState);
       GstPlayer *parent = (GstPlayer *) mparent;
       if (parent) {
         parent->sendEvent (MEDIA_ERROR, 0);
@@ -452,7 +452,7 @@ GstDriver::start ()
 
     case GSTDRIVER_STATE_COMPLETED:
     {
-      LOGD("We are in GSTDRIVER_STATE_COMPLETED");
+      LOGD ("We are in GSTDRIVER_STATE_COMPLETED");
       gint64 duration, position;
       duration = getDuration ();
       position = getPosition ();
@@ -460,23 +460,23 @@ GstDriver::start ()
       if ((duration - position) <= 0) {
         seek (0);
       }
-   }
+    }
     case GSTDRIVER_STATE_PREPARED:
     case GSTDRIVER_STATE_STARTED:
     case GSTDRIVER_STATE_PAUSED:
-    LOGD("We are in PREPARED/STARTED/PAUSED: %d", mState);
+      LOGD ("We are in PREPARED/STARTED/PAUSED: %d", mState);
       /* FIXME, twi says NOT 
          HAVING THIS MAKES GENERATING THUMBNAILS DOGSLOW
          no track means the sink is an AudioCache instance and the player is
          being used to decode in memory
-      */ 
+       */
 
-      if (mAudioOut->getTrack() == NULL) {
+      if (mAudioOut->getTrack () == NULL) {
         g_object_set (mAudioBin, "sync", FALSE, NULL);
       } else {
         g_object_set (mAudioBin, "sync", TRUE, NULL);
       }
- 
+
       mEos = false;
       gst_element_set_state (mPlaybin, GST_STATE_PLAYING);
       mState = GSTDRIVER_STATE_STARTED;
@@ -497,10 +497,10 @@ GstDriver::seek (gint64 p)
 
   if (!mPlaybin)
     goto bail;
-	
 
-  if(p < 0) //don't seek to negative time 
-	goto bail;
+
+  if (p < 0)                    //don't seek to negative time 
+    goto bail;
 
   mLastValidPosition = p;
 
@@ -519,11 +519,12 @@ bail:
   }
 }
 
-gint64
-GstDriver::getPosition ()
+gint64 GstDriver::getPosition ()
 {
-  GstFormat fmt = GST_FORMAT_TIME;
-  gint64 pos = 0;
+  GstFormat
+      fmt = GST_FORMAT_TIME;
+  gint64
+      pos = 0;
 
   if (!mPlaybin) {
     LOGV ("get postion but pipeline has not been created yet");
@@ -546,12 +547,13 @@ GstDriver::getStatus ()
   return mState;
 }
 
-gint64
-GstDriver::getDuration ()
+gint64 GstDriver::getDuration ()
 {
 
-  GstFormat fmt = GST_FORMAT_TIME;
-  gint64 len;
+  GstFormat
+      fmt = GST_FORMAT_TIME;
+  gint64
+      len;
 
   if (!mPlaybin) {
     LOGV ("get duration but pipeline has not been created yet");
@@ -587,7 +589,7 @@ GstDriver::stop ()
 {
   LOGV ("stop");
   gst_element_set_state (mPlaybin, GST_STATE_NULL);
-  
+
   if (wait_for_set_state (500) != GST_STATE_CHANGE_SUCCESS) {
     LOGW ("TIMEOUT on stop request");
   }
@@ -635,15 +637,15 @@ GstDriver::quit ()
 
   if (mMainLoop) {
     g_source_destroy (mBusWatch);
-	g_source_unref(mBusWatch);
-	mBusWatch = NULL;
+    g_source_unref (mBusWatch);
+    mBusWatch = NULL;
     g_main_loop_quit (mMainLoop);
     g_thread_join (mMainThread);
-	mMainThread = NULL;
+    mMainThread = NULL;
     g_main_loop_unref (mMainLoop);
-	mMainLoop = NULL;
+    mMainLoop = NULL;
     g_main_context_unref (mMainCtx);
-	mMainCtx = NULL;
+    mMainCtx = NULL;
   }
 
   mState = GSTDRIVER_STATE_END;
@@ -667,17 +669,17 @@ GstDriver::getStreamsInfo ()
     }
 
     if (n_video > 0) {
-      LOGV("We Have a video stream");
+      LOGV ("We Have a video stream");
       mHaveStreamVideo = TRUE;
-    } else 
-      LOGV("We don't have a video stream");
+    } else
+      LOGV ("We don't have a video stream");
 
     mHaveStreamInfo = TRUE;
   }
 }
 
 /*static*/ GstBusSyncReply
-GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
+    GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
 {
   GstDriver *ed = (GstDriver *) data;
   GstPlayer *parent = (GstPlayer *) ed->mparent;
@@ -685,25 +687,25 @@ GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
   UNUSED (bus);
 
   switch (GST_MESSAGE_TYPE (msg)) {
-    case GST_MESSAGE_EOS: 
-  {
+    case GST_MESSAGE_EOS:
+    {
       LOGV ("bus receive message EOS");
       /* set state to paused (we want that "isPlaying" fct returns false after eos) */
       ed->mState = GSTDRIVER_STATE_COMPLETED;
 
-	  gst_element_set_state(ed->mPlaybin, GST_STATE_PAUSED);
-	  
+      gst_element_set_state (ed->mPlaybin, GST_STATE_PAUSED);
+
       if (ed->mAudioOut != 0) {
-         ed->mAudioOut->stop();
+        ed->mAudioOut->stop ();
       }
 
-      ed->setEos(ed->getDuration());
-      LOGV("set position on eos %"GST_TIME_FORMAT,
-          GST_TIME_ARGS(ed->getPosition()));
+      ed->setEos (ed->getDuration ());
+      LOGV ("set position on eos %" GST_TIME_FORMAT,
+          GST_TIME_ARGS (ed->getPosition ()));
 
       if (parent)
         parent->sendEvent (MEDIA_PLAYBACK_COMPLETE);
-	      
+
 
       break;
     }
@@ -748,14 +750,15 @@ GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
       GstState old_state, new_state, pending;
 
       gst_message_parse_state_changed (msg, &old_state, &new_state, &pending);
-      	 
-	 
+
+
       /* we only care about pipeline state change messages */
       if (GST_MESSAGE_SRC (msg) != GST_OBJECT_CAST (ed->mPlaybin))
         break;
-      
-      LOGV ("bus receive message STATE_CHANGED old %d new %d pending %d", old_state, new_state, pending);
-      
+
+      LOGV ("bus receive message STATE_CHANGED old %d new %d pending %d",
+          old_state, new_state, pending);
+
       //
       if ((new_state == GST_STATE_PLAYING) && (old_state == GST_STATE_PAUSED))
         ed->getStreamsInfo ();
@@ -782,10 +785,10 @@ GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
 
         if ((ed->mPlaybackType == GSTDRIVER_PLAYBACK_TYPE_RTSP) && parent) {
           LOGV ("bus handler send event MEDIA_PREPARED");
-		  ed->mState = GSTDRIVER_STATE_PREPARED;
+          ed->mState = GSTDRIVER_STATE_PREPARED;
           parent->sendEvent (MEDIA_PREPARED);
         }
-        
+
         if (ed->mVideoBin) {
           int width = 0, height = 0;
           if (ed->mHaveStreamInfo && ed->mHaveStreamVideo) {
@@ -816,7 +819,7 @@ GstDriver::bus_message (GstBus * bus, GstMessage * msg, gpointer data)
           LOGV ("Buffering complete");
           if ((ed->mState == GSTDRIVER_STATE_INITIALIZED) && parent) {
             LOGV ("Sending MEDIA_PREPARED");
-			ed->mState = GSTDRIVER_STATE_PREPARED;
+            ed->mState = GSTDRIVER_STATE_PREPARED;
             parent->sendEvent (MEDIA_PREPARED);
           } else if (ed->mPausedByUser == FALSE) {
             LOGV ("buffer level hit high watermark -> PLAYING");
@@ -1003,7 +1006,7 @@ GstDriver::init_gstreamer ()
 // @param[inout] records Parcel where the player appends its metadata.
 // @return OK if the call was successful.
 status_t
-GstDriver::getMetadata (const SortedVector < media::Metadata::Type > &ids,
+    GstDriver::getMetadata (const SortedVector < media::Metadata::Type > &ids,
     Parcel * records)
 {
   using media::Metadata;

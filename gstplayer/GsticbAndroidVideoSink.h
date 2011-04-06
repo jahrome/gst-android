@@ -27,16 +27,16 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef __GST_ICBANDROIDVIDEOSINK_H__
 #define __GST_ICBANDROIDVIDEOSINK_H__
 
-/***** Gstreamer includes *****/ 
+/***** Gstreamer includes *****/
 #include <gst/video/gstvideosink.h>
 
-/***** Android includes *****/ 
+/***** Android includes *****/
 #include <binder/MemoryBase.h>
 #include <binder/MemoryHeapBase.h>
 #include <binder/MemoryHeapPmem.h>
 #ifndef STECONF_ANDROID_VERSION_FROYO
 #include <ui/ISurface.h>
-#else 
+#else
 #include <surfaceflinger/ISurface.h>
 #endif
 
@@ -54,7 +54,6 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_ICB_ANDROID_VIDEO_SINK))
 #define GST_IS_ICB_ANDROID_VIDEO_SINK_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_ICB_ANDROID_VIDEO_SINK))
-
 typedef struct _GstIcbAndroidVideoSink GstIcbAndroidVideoSink;
 typedef struct _GstIcbAndroidVideoSinkClass GstIcbAndroidVideoSinkClass;
 
@@ -63,25 +62,25 @@ struct _GstIcbAndroidVideoSink
   /* Our element stuff */
   GstVideoSink videosink;
 
-  sp<ISurface>                mSurface;
+    sp < ISurface > mSurface;
 
-  sp<MemoryHeapBase>          mFrameHeap;
-  sp<MemoryHeapPmem>          mFrameHeapPmem;
+    sp < MemoryHeapBase > mFrameHeap;
+    sp < MemoryHeapPmem > mFrameHeapPmem;
 
   /* Frame buffer support */
-  static const int            kBufferCount = 2;
-  size_t                      mFrameBuffers[kBufferCount];
-  int                         mFrameBufferIndex;
+  static const int kBufferCount = 2;
+  size_t mFrameBuffers[kBufferCount];
+  int mFrameBufferIndex;
 
-  gboolean                    mInitialized;
+  gboolean mInitialized;
 
-  int                         mFrameWidth;
-  int                         mFrameHeight;
+  int mFrameWidth;
+  int mFrameHeight;
 
   // GstBuffer used to avoid buffer release while used by the UI
-  int                         mGstBufferIndex;
-  static const int            mGstBuffersCount = 3;
-  GstBuffer                  *mGstBuffers[mGstBuffersCount];
+  int mGstBufferIndex;
+  static const int mGstBuffersCount = 3;
+  GstBuffer *mGstBuffers[mGstBuffersCount];
   GstPadEventFunction bsink_event;
 };
 
@@ -95,5 +94,4 @@ GType gst_icbandroidvideosink_get_type (void);
 gboolean gst_icbandroidvideosink_plugin_init (GstPlugin * plugin);
 
 G_END_DECLS
-
 #endif /*__GST_ICBANDROIDVIDEOSINK_H__*/

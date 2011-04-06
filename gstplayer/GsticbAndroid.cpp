@@ -23,11 +23,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 /* Object header */
 #include "GsticbAndroidVideoSink.h"
-	
-static gboolean plugin_init (GstPlugin * plugin)
+
+static gboolean
+plugin_init (GstPlugin * plugin)
 {
   gboolean ret = TRUE;
- 
+
   ret &= gst_icbandroidvideosink_plugin_init (plugin);
 
   return ret;
@@ -43,5 +44,5 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     "icbandroid",
     "Icebird android library",
-    plugin_init, VERSION, "Proprietary", "libgsticbandroidvideo.so", "http://www.stericsson.com")
-
+    plugin_init, VERSION, "Proprietary", "libgsticbandroidvideo.so",
+    "http://www.stericsson.com")

@@ -43,6 +43,7 @@ GstMetadataRetrieverDriver::GstMetadataRetrieverDriver():
 	mPipeline(NULL),
 	mAppsrc(NULL),
     mColorTransform(NULL),
+    mScaler(NULL),
     mPlayBin(NULL),
     mAppSink(NULL),
     mAudioSink(NULL),
@@ -103,9 +104,6 @@ GstMetadataRetrieverDriver::cb_newpad(GstElement *mPlayBin, GstPad *pad,
     str  = gst_caps_get_structure (caps, 0);
     if (g_strrstr (gst_structure_get_name (str), "audio")) {
         LOGI ("cb_newpad Called for an audio pad");
-        data->mAudioSink = gst_element_factory_make ("fakesink", NULL);
-        gst_bin_add (GST_BIN (data->mPipeline), data->mAudioSink);
-        gst_element_set_state (data->mAudioSink, GST_STATE_PAUSED);
         err = gst_element_link (data->mPlayBin, data->mAudioSink);
     }
     else
@@ -135,26 +133,28 @@ void GstMetadataRetrieverDriver::setup(int mode)
         LOGI("For URI:%s", mUri);
 		mPipeline		= gst_pipeline_new ("pipeline");
 		mColorTransform	= gst_element_factory_make ("ffmpegcolorspace", NULL);
+        mScaler         = gst_element_factory_make ("videoscale", NULL);
 		mPlayBin		= gst_element_factory_make ("uridecodebin", "src");
 		mAppSink		= gst_element_factory_make ("appsink", "sink");
+        mAudioSink      = gst_element_factory_make ("fakesink", NULL);
 
 		g_object_set (G_OBJECT (mPlayBin), "uri", mUri, NULL);
 		g_object_set (G_OBJECT (mAppSink), "enable-last-buffer", "true", NULL);
-		g_signal_connect (mPlayBin, "pad-added", G_CALLBACK (cb_newpad),
-							this);
 
 		gst_bin_add_many (GST_BIN (mPipeline), mPlayBin, mColorTransform,
-							mAppSink, NULL);
+							mAudioSink, mScaler, mAppSink, NULL);
 
-		if (!gst_element_link (mColorTransform, mAppSink))
+		if (!gst_element_link (mColorTransform, mScaler))
 			LOGE("Failed to link %s to %s",
 					GST_ELEMENT_NAME (mColorTransform),
+					GST_ELEMENT_NAME (mScaler));
+
+		if (!gst_element_link (mScaler, mAppSink))
+			LOGE("Failed to link %s to %s",
+					GST_ELEMENT_NAME (mScaler),
 					GST_ELEMENT_NAME (mAppSink));
 
-		gst_element_set_state (mPlayBin,        GST_STATE_PAUSED);
-		gst_element_set_state (mAppSink,        GST_STATE_PAUSED);
-		gst_element_set_state (mColorTransform, GST_STATE_PAUSED);
-
+		g_signal_connect (mPlayBin, "pad-added", G_CALLBACK (cb_newpad), this);
 	} else {
 		description = g_strdup_printf("uridecodebin uri=%s name=src ! fakesink name=sink", mUri);
 		mPipeline = gst_parse_launch(description, &error);
@@ -165,6 +165,7 @@ void GstMetadataRetrieverDriver::setup(int mode)
 		return;
 	}
 	LOGV("pipeline creation: %s", GST_ELEMENT_NAME (mPipeline));
+
 
 	// verbose info (as gst-launch -v)
 	// Activate the trace with the command: "setprop persist.gst.verbose 1"
@@ -177,7 +178,6 @@ void GstMetadataRetrieverDriver::setup(int mode)
 		        G_CALLBACK (gst_object_default_deep_notify), NULL);
 	}
 
-	//gst_element_set_state (mPipeline, GST_STATE_NULL);
 	mState = GST_STATE_NULL;
 }
 

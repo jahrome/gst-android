@@ -667,8 +667,10 @@ GstDriver::getStreamsInfo ()
     }
 
     if (n_video > 0) {
+      LOGV("We Have a video stream");
       mHaveStreamVideo = TRUE;
-    }
+    } else 
+      LOGV("We don't have a video stream");
 
     mHaveStreamInfo = TRUE;
   }

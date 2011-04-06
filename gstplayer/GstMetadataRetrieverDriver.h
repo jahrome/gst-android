@@ -58,6 +58,7 @@ private:
 	GstElement* mPipeline;
 	GstElement* mAppsrc;
 	GstElement* mColorTransform;
+    GstElement* mScaler;
 	GstElement* mPlayBin;
 	GstElement* mAppSink;
 	GstElement* mAudioSink;

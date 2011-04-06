@@ -982,6 +982,7 @@ GstDriver::init_gstreamer ()
   LOGV ("route the trace to %s", trace);
   setenv ("GST_DEBUG_FILE", trace, 1);
 
+  setenv ("GST_REGISTRY", "/data/data/gstreamer/registry.bin", 0);
   LOGV ("gstreamer init check");
   if (!gst_init_check (NULL, NULL, &err)) {
     LOGE ("Could not initialize GStreamer: %s\n",

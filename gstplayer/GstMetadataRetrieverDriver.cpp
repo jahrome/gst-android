@@ -132,7 +132,7 @@ void GstMetadataRetrieverDriver::setup(int mode)
 
 	if(mMode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
 		LOGI("Called in METADATA_MODE_FRAME_CAPTURE_ONLY mode");
-
+        LOGI("For URI:%s", mUri);
 		mPipeline		= gst_pipeline_new ("pipeline");
 		mColorTransform	= gst_element_factory_make ("ffmpegcolorspace", NULL);
 		mPlayBin		= gst_element_factory_make ("uridecodebin", "src");
@@ -189,7 +189,7 @@ void GstMetadataRetrieverDriver::setDataSource(const char* url)
 	if(!gst_uri_is_valid(url)) {
 		gchar *uri_file = g_filename_to_uri (url, NULL, NULL);
 		// add \" to avoid issues with space charactere in filename/filepath
-		mUri = g_strdup_printf("\"%s\"", uri_file);
+		mUri = g_strdup_printf("%s", uri_file);
 		g_free (uri_file);
 	}
 	else {

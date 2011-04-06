@@ -136,7 +136,7 @@ void GstMetadataRetrieverDriver::setup(int mode)
 		mPipeline		= gst_pipeline_new ("pipeline");
 		mColorTransform	= gst_element_factory_make ("ffmpegcolorspace", NULL);
 		mPlayBin		= gst_element_factory_make ("uridecodebin", "src");
-		mAppSink		= gst_element_factory_make("appsink", "sink");
+		mAppSink		= gst_element_factory_make ("appsink", "sink");
 
 		g_object_set (G_OBJECT (mPlayBin), "uri", mUri, NULL);
 		g_object_set (G_OBJECT (mAppSink), "enable-last-buffer", "true", NULL);

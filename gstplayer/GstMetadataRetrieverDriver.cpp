@@ -4,6 +4,7 @@
  *       Filename:  GstMetadataRetrieverDriver.cpp
  *
  *	Copyright ST-Ericsson 2009
+ *	Copyright 2011 Reynaldo H. Verdejo Pinochet <reynaldo@collabora.co.uk>
  * =====================================================================================
  */
 /* 

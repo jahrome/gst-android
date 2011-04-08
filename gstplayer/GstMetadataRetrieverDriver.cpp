@@ -107,17 +107,20 @@ GstMetadataRetrieverDriver::cb_newpad (GstElement * mPlayBin, GstPad * pad,
   caps = gst_pad_get_caps (pad);
   str = gst_caps_get_structure (caps, 0);
   if (g_strrstr (gst_structure_get_name (str), "audio")) {
-    LOGI ("cb_newpad Called for an audio pad");
+    LOGI ("Got an audio pad");
     err = gst_element_link (data->mPlayBin, data->mAudioSink);
   } else if (g_strrstr (gst_structure_get_name (str), "video")) {
-    LOGI ("cb_newpad Called for a video pad");
+    LOGI ("Got a video pad");
     err = gst_element_link (data->mPlayBin, data->mColorTransform);
+  } else {
+    LOGW ("Got a pad we don't know how to handle");
+    return;
   }
 
   if (!err)
     LOGE ("Could not link %s with %s", GST_ELEMENT_NAME (data->mPlayBin),
-        GST_ELEMENT_NAME (data->mAudioSink ?
-            data->mAudioSink : data->mColorTransform));
+          GST_ELEMENT_NAME (data->mAudioSink ?
+          data->mAudioSink : data->mColorTransform));
 
   gst_caps_unref (caps);
 
@@ -133,39 +136,42 @@ GstMetadataRetrieverDriver::setup (int mode)
   mMode = mode;
 
 
+  LOGI ("Called For URI:%s", mUri);
   if (mMode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
     LOGI ("Called in METADATA_MODE_FRAME_CAPTURE_ONLY mode");
-    LOGI ("For URI:%s", mUri);
-    mPipeline = gst_pipeline_new ("pipeline");
+
+    mPipeline       = gst_pipeline_new ("pipeline");
     mColorTransform = gst_element_factory_make ("ffmpegcolorspace", NULL);
-    mScaler = gst_element_factory_make ("videoscale", NULL);
-    mPlayBin = gst_element_factory_make ("uridecodebin", "src");
-    mAppSink = gst_element_factory_make ("appsink", "sink");
-    mAudioSink = gst_element_factory_make ("fakesink", NULL);
+    mScaler         = gst_element_factory_make ("videoscale", NULL);
+    mPlayBin        = gst_element_factory_make ("uridecodebin", "src");
+    mAppSink        = gst_element_factory_make ("appsink", "sink");
+    mAudioSink      = gst_element_factory_make ("fakesink", NULL);
 
     g_object_set (G_OBJECT (mPlayBin), "uri", mUri, NULL);
     g_object_set (G_OBJECT (mAppSink), "enable-last-buffer", "true", NULL);
 
     gst_bin_add_many (GST_BIN (mPipeline), mPlayBin, mColorTransform,
-        mAudioSink, mScaler, mAppSink, NULL);
+                      mAudioSink, mScaler, mAppSink, NULL);
 
-    caps_filter = gst_caps_new_simple ("video/x-raw-rgb", "bpp",
-                                       G_TYPE_INT, 16, NULL);
+    caps_filter = gst_caps_new_simple ("video/x-raw-rgb", "bpp", G_TYPE_INT, 16,
+                                       NULL);
  
     if (!gst_element_link_filtered (mColorTransform, mScaler, caps_filter))
-      LOGE ("Failed to link %s to %s",
-          GST_ELEMENT_NAME (mColorTransform), GST_ELEMENT_NAME (mScaler));
+      LOGE ("Failed to link %s to %s", GST_ELEMENT_NAME (mColorTransform),
+            GST_ELEMENT_NAME (mScaler));
+
     gst_caps_unref (caps_filter);
 
     if (!gst_element_link (mScaler, mAppSink))
-      LOGE ("Failed to link %s to %s",
-          GST_ELEMENT_NAME (mScaler), GST_ELEMENT_NAME (mAppSink));
+      LOGE ("Failed to link %s to %s", GST_ELEMENT_NAME (mScaler),
+            GST_ELEMENT_NAME (mAppSink));
 
     g_signal_connect (mPlayBin, "pad-added", G_CALLBACK (cb_newpad), this);
   } else {
+    LOGI ("Called in mode %d", mMode);
     description =
         g_strdup_printf ("uridecodebin uri=%s name=src ! fakesink name=sink",
-        mUri);
+                         mUri);
     mPipeline = gst_parse_launch (description, &error);
   }
 
@@ -174,7 +180,6 @@ GstMetadataRetrieverDriver::setup (int mode)
     return;
   }
   LOGV ("pipeline creation: %s", GST_ELEMENT_NAME (mPipeline));
-
 
   // verbose info (as gst-launch -v)
   // Activate the trace with the command: "setprop persist.gst.verbose 1"
@@ -198,7 +203,6 @@ GstMetadataRetrieverDriver::setDataSource (const char *url)
 
   if (!gst_uri_is_valid (url)) {
     gchar *uri_file = g_filename_to_uri (url, NULL, NULL);
-    // add \" to avoid issues with space charactere in filename/filepath
     mUri = g_strdup_printf ("%s", uri_file);
     g_free (uri_file);
   } else {
@@ -213,7 +217,6 @@ GstMetadataRetrieverDriver::have_video_caps (GstElement * uridecodebin,
     GstCaps * caps)
 {
   GstCaps *intersection, *video_caps;
-
   gboolean res;
 
   video_caps = gst_static_caps_get (&static_have_video_caps);
@@ -248,12 +251,12 @@ GstMetadataRetrieverDriver::are_audio_caps (GstElement * uridecodebin,
   return res;
 }
 
-/*static*/ gboolean
+/* static*/
+gboolean
 GstMetadataRetrieverDriver::are_video_caps (GstElement * uridecodebin,
     GstCaps * caps)
 {
   GstCaps *intersection, *end_caps;
-
   gboolean res;
 
   end_caps = gst_static_caps_get (&static_video_caps);
@@ -270,14 +273,14 @@ GstMetadataRetrieverDriver::are_video_caps (GstElement * uridecodebin,
 
 
 /* return TRUE if we continu to buld the graph, FALSE either */
-/*static */ gboolean
+/*static */
+gboolean
 GstMetadataRetrieverDriver::autoplug_continue (GstElement * object,
     GstPad * pad, GstCaps * caps, GstMetadataRetrieverDriver * ed)
 {
   GstStructure *structure = NULL;
   structure = gst_caps_get_structure (caps, 0);
   gboolean res;
-
 
   UNUSED (pad);
 
@@ -362,7 +365,7 @@ GstMetadataRetrieverDriver::source_changed_cb (GObject * obj,
     g_object_set (ed->mAppsrc, "format", GST_FORMAT_BYTES, NULL);
     g_object_set (ed->mAppsrc, "stream-type", 2 /*"random-access" */ , NULL);
     g_object_set (ed->mAppsrc, "size",
-        (gint64) (ed->mFdSrcOffset_max - ed->mFdSrcOffset_min), NULL);
+                 (gint64) (ed->mFdSrcOffset_max - ed->mFdSrcOffset_min), NULL);
     g_signal_connect (ed->mAppsrc, "need-data", G_CALLBACK (need_data), ed);
     g_signal_connect (ed->mAppsrc, "seek-data", G_CALLBACK (seek_data), ed);
   }
@@ -450,11 +453,11 @@ GstMetadataRetrieverDriver::prepareSync ()
   }
 
   g_signal_connect (src, "autoplug-continue", G_CALLBACK (autoplug_continue),
-      this);
+                    this);
 
   if (mFdSrcOffset_max) {
     g_signal_connect (src, "notify::source", G_CALLBACK (source_changed_cb),
-        this);
+                      this);
   }
 
   bus = gst_pipeline_get_bus (GST_PIPELINE (mPipeline));
@@ -516,8 +519,7 @@ GstMetadataRetrieverDriver::prepareSync ()
         // do nothing
         break;
     }
-    message =
-        gst_bus_timed_pop_filtered (bus, 50 * GST_MSECOND, message_filter);
+    message = gst_bus_timed_pop_filtered (bus, 50 * GST_MSECOND, message_filter);
   }
 
 bail:
@@ -669,9 +671,7 @@ GstMetadataRetrieverDriver::getCaptureFrame (guint8 ** data)
     g_object_get (G_OBJECT (sink), "last-buffer", &frame, NULL);
 
     if (frame != NULL) {
-      if (*data) {
-        delete[] * data;
-      }
+      if (*data) delete[] * data;
       *data = new guint8[GST_BUFFER_SIZE (frame)];
       memcpy (*data, GST_BUFFER_DATA (frame), GST_BUFFER_SIZE (frame));
       gst_object_unref (frame);
@@ -701,16 +701,16 @@ GstMetadataRetrieverDriver::getMetadata (gchar * tag)
       if (!gst_tag_list_get_string_index (mTag_list, tag, 0, &str)) {
         g_assert_not_reached ();
       }
-    } else {
+    } else
       str =
           g_strdup_value_contents (gst_tag_list_get_value_index (mTag_list, tag,
               0));
-    }
+
     LOGV ("for tag %s have metadata %s", tag, str);
     return str;
-  } else {
+  } else
     LOGV (" No Tag : %s ! ", tag);
-  }
+
   return NULL;
 }
 
@@ -760,11 +760,9 @@ GstMetadataRetrieverDriver::debug_log (GstDebugCategory * category,
 
 
   g_printerr ("%" GST_TIME_FORMAT " %5d %s %s %s:%d %s\r\n",
-      GST_TIME_ARGS (elapsed),
-      pid,
-      gst_debug_level_get_name (level),
-      gst_debug_category_get_name (category), function, line,
-      gst_debug_message_get (message));
+              GST_TIME_ARGS (elapsed), pid, gst_debug_level_get_name (level),
+              gst_debug_category_get_name (category), function, line,
+              gst_debug_message_get (message));
 }
 
 

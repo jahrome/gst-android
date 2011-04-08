@@ -129,7 +129,9 @@ GstMetadataRetrieverDriver::setup (int mode)
 {
   gchar *description = NULL;
   GError *error = NULL;
+  GstCaps *caps_filter = NULL;
   mMode = mode;
+
 
   if (mMode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
     LOGI ("Called in METADATA_MODE_FRAME_CAPTURE_ONLY mode");
@@ -147,9 +149,13 @@ GstMetadataRetrieverDriver::setup (int mode)
     gst_bin_add_many (GST_BIN (mPipeline), mPlayBin, mColorTransform,
         mAudioSink, mScaler, mAppSink, NULL);
 
-    if (!gst_element_link (mColorTransform, mScaler))
+    caps_filter = gst_caps_new_simple ("video/x-raw-rgb", "bpp",
+                                       G_TYPE_INT, 16, NULL);
+ 
+    if (!gst_element_link_filtered (mColorTransform, mScaler, caps_filter))
       LOGE ("Failed to link %s to %s",
           GST_ELEMENT_NAME (mColorTransform), GST_ELEMENT_NAME (mScaler));
+    gst_caps_unref (caps_filter);
 
     if (!gst_element_link (mScaler, mAppSink))
       LOGE ("Failed to link %s to %s",

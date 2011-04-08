@@ -50,7 +50,7 @@ mPipeline (NULL),
 mAppsrc (NULL),
 mColorTransform (NULL),
 mScaler (NULL),
-mPlayBin (NULL),
+mUriDecodeBin (NULL),
 mAppSink (NULL),
 mAudioSink (NULL),
 mUri (NULL),
@@ -97,7 +97,7 @@ GstMetadataRetrieverDriver::~GstMetadataRetrieverDriver ()
 }
 
 void
-GstMetadataRetrieverDriver::cb_newpad (GstElement * mPlayBin, GstPad * pad,
+GstMetadataRetrieverDriver::cb_newpad (GstElement * mUriDecodeBin, GstPad * pad,
     GstMetadataRetrieverDriver * data)
 {
   GstCaps *caps;
@@ -108,17 +108,17 @@ GstMetadataRetrieverDriver::cb_newpad (GstElement * mPlayBin, GstPad * pad,
   str = gst_caps_get_structure (caps, 0);
   if (g_strrstr (gst_structure_get_name (str), "audio")) {
     LOGI ("Got an audio pad");
-    err = gst_element_link (data->mPlayBin, data->mAudioSink);
+    err = gst_element_link (data->mUriDecodeBin, data->mAudioSink);
   } else if (g_strrstr (gst_structure_get_name (str), "video")) {
     LOGI ("Got a video pad");
-    err = gst_element_link (data->mPlayBin, data->mColorTransform);
+    err = gst_element_link (data->mUriDecodeBin, data->mColorTransform);
   } else {
     LOGW ("Got a pad we don't know how to handle");
     return;
   }
 
   if (!err)
-    LOGE ("Could not link %s with %s", GST_ELEMENT_NAME (data->mPlayBin),
+    LOGE ("Could not link %s with %s", GST_ELEMENT_NAME (data->mUriDecodeBin),
           GST_ELEMENT_NAME (data->mAudioSink ?
           data->mAudioSink : data->mColorTransform));
 
@@ -143,14 +143,14 @@ GstMetadataRetrieverDriver::setup (int mode)
     mPipeline       = gst_pipeline_new ("pipeline");
     mColorTransform = gst_element_factory_make ("ffmpegcolorspace", NULL);
     mScaler         = gst_element_factory_make ("videoscale", NULL);
-    mPlayBin        = gst_element_factory_make ("uridecodebin", "src");
+    mUriDecodeBin   = gst_element_factory_make ("uridecodebin", "src");
     mAppSink        = gst_element_factory_make ("appsink", "sink");
     mAudioSink      = gst_element_factory_make ("fakesink", NULL);
 
-    g_object_set (G_OBJECT (mPlayBin), "uri", mUri, NULL);
+    g_object_set (G_OBJECT (mUriDecodeBin), "uri", mUri, NULL);
     g_object_set (G_OBJECT (mAppSink), "enable-last-buffer", "true", NULL);
 
-    gst_bin_add_many (GST_BIN (mPipeline), mPlayBin, mColorTransform,
+    gst_bin_add_many (GST_BIN (mPipeline), mUriDecodeBin, mColorTransform,
                       mAudioSink, mScaler, mAppSink, NULL);
 
     caps_filter = gst_caps_new_simple ("video/x-raw-rgb", "bpp", G_TYPE_INT, 16,
@@ -166,7 +166,7 @@ GstMetadataRetrieverDriver::setup (int mode)
       LOGE ("Failed to link %s to %s", GST_ELEMENT_NAME (mScaler),
             GST_ELEMENT_NAME (mAppSink));
 
-    g_signal_connect (mPlayBin, "pad-added", G_CALLBACK (cb_newpad), this);
+    g_signal_connect (mUriDecodeBin, "pad-added", G_CALLBACK (cb_newpad), this);
   } else {
     LOGI ("Called in mode %d", mMode);
     description =

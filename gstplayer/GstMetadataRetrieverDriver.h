@@ -53,15 +53,15 @@ namespace android
     void getFrameRate (int *framerate);
 
     static
-        void cb_newpad (GstElement * mPlayBin, GstPad * pad,
+        void cb_newpad (GstElement * mUriDecodeBin, GstPad * pad,
         GstMetadataRetrieverDriver * data);
 
   private:
-      GstElement * mPipeline;
+    GstElement *mPipeline;
     GstElement *mAppsrc;
     GstElement *mColorTransform;
     GstElement *mScaler;
-    GstElement *mPlayBin;
+    GstElement *mUriDecodeBin;
     GstElement *mAppSink;
     GstElement *mAudioSink;
 

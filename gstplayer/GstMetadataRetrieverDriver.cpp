@@ -203,10 +203,10 @@ GstMetadataRetrieverDriver::setDataSource (const char *url)
 
   if (!gst_uri_is_valid (url)) {
     gchar *uri_file = g_filename_to_uri (url, NULL, NULL);
-    mUri = g_strdup_printf ("%s", uri_file);
+    mUri = g_strdup (uri_file);
     g_free (uri_file);
   } else {
-    mUri = g_strdup_printf ("%s", url);
+    mUri = g_strdup (url);
   }
 
   LOGV ("set uri %s to src", mUri);

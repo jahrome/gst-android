@@ -400,6 +400,7 @@ GstMetadataRetrieverDriver::getVideoSize (int *width, int *height)
       gst_video_get_size (GST_PAD (pad), width, height);
       gst_object_unref (GST_OBJECT (pad));
     }
+    gst_object_unref (GST_OBJECT (sink));
     LOGV ("video width %d height %d", *width, *height);
   }
 }
@@ -422,6 +423,7 @@ GstMetadataRetrieverDriver::getFrameRate (int *framerate)
       }
       gst_object_unref (GST_OBJECT (pad));
     }
+    gst_object_unref (GST_OBJECT (sink));
     LOGV ("framerate %d", *framerate);
   }
 }
@@ -523,7 +525,8 @@ GstMetadataRetrieverDriver::prepareSync ()
   }
 
 bail:
-  gst_object_unref (bus);
+  gst_object_unref (GST_OBJECT (src));
+  gst_object_unref (GST_OBJECT (bus));
 }
 
 
@@ -676,6 +679,7 @@ GstMetadataRetrieverDriver::getCaptureFrame (guint8 ** data)
       memcpy (*data, GST_BUFFER_DATA (frame), GST_BUFFER_SIZE (frame));
       gst_object_unref (frame);
     }
+    gst_object_unref (GST_OBJECT (sink));
   }
 }
 

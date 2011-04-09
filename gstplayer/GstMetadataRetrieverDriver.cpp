@@ -216,17 +216,14 @@ GstMetadataRetrieverDriver::setDataSource (const char *url)
 GstMetadataRetrieverDriver::have_video_caps (GstElement * uridecodebin,
     GstCaps * caps)
 {
-  GstCaps *intersection, *video_caps;
+  GstCaps *video_caps;
   gboolean res;
 
   video_caps = gst_static_caps_get (&static_have_video_caps);
   GST_OBJECT_LOCK (uridecodebin);
-  intersection = gst_caps_intersect (caps, video_caps);
+  res = gst_caps_can_intersect (caps, video_caps);
   GST_OBJECT_UNLOCK (uridecodebin);
 
-  res = !(gst_caps_is_empty (intersection));
-
-  gst_caps_unref (intersection);
   gst_caps_unref (video_caps);
   return res;
 }
@@ -235,18 +232,14 @@ GstMetadataRetrieverDriver::have_video_caps (GstElement * uridecodebin,
 GstMetadataRetrieverDriver::are_audio_caps (GstElement * uridecodebin,
     GstCaps * caps)
 {
-  GstCaps *intersection, *end_caps;
-
+  GstCaps *end_caps;
   gboolean res;
 
   end_caps = gst_static_caps_get (&static_audio_caps);
   GST_OBJECT_LOCK (uridecodebin);
-  intersection = gst_caps_intersect (caps, end_caps);
+  res = gst_caps_can_intersect (caps, end_caps);
   GST_OBJECT_UNLOCK (uridecodebin);
 
-  res = (gst_caps_is_empty (intersection));
-
-  gst_caps_unref (intersection);
   gst_caps_unref (end_caps);
   return res;
 }
@@ -256,17 +249,14 @@ gboolean
 GstMetadataRetrieverDriver::are_video_caps (GstElement * uridecodebin,
     GstCaps * caps)
 {
-  GstCaps *intersection, *end_caps;
+  GstCaps *end_caps;
   gboolean res;
 
   end_caps = gst_static_caps_get (&static_video_caps);
   GST_OBJECT_LOCK (uridecodebin);
-  intersection = gst_caps_intersect (caps, end_caps);
+  res = gst_caps_can_intersect (caps, end_caps);
   GST_OBJECT_UNLOCK (uridecodebin);
 
-  res = (gst_caps_is_empty (intersection));
-
-  gst_caps_unref (intersection);
   gst_caps_unref (end_caps);
   return res;
 }

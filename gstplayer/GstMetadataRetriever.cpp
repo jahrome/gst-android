@@ -31,29 +31,27 @@ namespace android
 
   static GStaticMutex GstMetadataRetriever_mutex = G_STATIC_MUTEX_INIT;
 
-    GstMetadataRetriever::GstMetadataRetriever ()
+  GstMetadataRetriever::GstMetadataRetriever ()
   {
     mMode =
-        METADATA_MODE_METADATA_RETRIEVAL_ONLY |
-        METADATA_MODE_FRAME_CAPTURE_ONLY;
+        METADATA_MODE_METADATA_RETRIEVAL_ONLY | METADATA_MODE_FRAME_CAPTURE_ONLY;
     mLocked = 0;
 
-    LOGV ("GstMetadataRetriever constructor");
+    LOGV ("Constructor");
     //g_static_mutex_lock (&GstMetadataRetriever_mutex);
     mGstDriver = new GstMetadataRetrieverDriver ();
-    LOGV ("GstMetadataRetriever constructor exit");
+    LOGV ("Constructor exit");
   }
 
   GstMetadataRetriever::~GstMetadataRetriever ()
   {
-    LOGV ("GstMetadataRetriever destructor");
+    LOGV ("Destructor");
     mGstDriver->quit ();
-    if (mGstDriver) {
+    if (mGstDriver)
       delete mGstDriver;
-    }
     mGstDriver = NULL;
     if (mLocked) {
-      LOGV ("GstMetadataRetriever destructor deactivate video protection");
+      LOGV ("Destructor deactivate video protection");
       g_static_mutex_unlock (&GstMetadataRetriever_mutex);
     }
   }
@@ -64,7 +62,7 @@ namespace android
     status_t ret = OK;
     int status = 0;
 
-    LOGV ("GstMetadataRetriever setDataSource %s", url);
+    LOGV ("setDataSource %s", url);
 
     mGstDriver->setDataSource (url);
     mGstDriver->setup (mMode);
@@ -72,8 +70,8 @@ namespace android
 
     status = mGstDriver->getStatus ();
 
-    LOGV ("GstMetadataRetriever setDataSource %s",
-        (status == GST_STATE_PAUSED) ? "OK" : "not correct state");
+    LOGV ("setDataSource %s",
+          (status == GST_STATE_PAUSED) ? "OK" : "not correct state");
     if (status != GST_STATE_PAUSED)
       ret = UNKNOWN_ERROR;
 
@@ -86,15 +84,14 @@ namespace android
     status_t ret = OK;
     int status = 0;
 
-    LOGV ("GstMetadataRetriever setDataSource fd=%d offset=%lld lenght=%lld",
-        fd, offset, length);
+    LOGV ("setDataSource fd=%d offset=%lld lenght=%lld", fd, offset, length);
     mGstDriver->setFdDataSource (fd, offset, length);
     mGstDriver->setup (mMode);
     mGstDriver->prepareSync ();
 
     status = mGstDriver->getStatus ();
-    LOGV ("GstMetadataRetriever setDataSource %s:%d",
-        (status == GST_STATE_PAUSED) ? "OK" : "not correct state", status);
+    LOGV ("setDataSource %s:%d",
+          (status == GST_STATE_PAUSED) ? "OK" : "not correct state", status);
     if (status != GST_STATE_PAUSED)
       return UNKNOWN_ERROR;
 
@@ -104,7 +101,7 @@ namespace android
 
   status_t GstMetadataRetriever::setMode (int mode)
   {
-    LOGV ("GstMetadataRetriever setMode mode=%d", mode);
+    LOGV ("setMode mode=%d", mode);
     if (mode < METADATA_MODE_NOOP ||
         mode > METADATA_MODE_FRAME_CAPTURE_AND_METADATA_RETRIEVAL) {
       LOGE ("set to invalid mode (%d)", mode);
@@ -113,21 +110,19 @@ namespace android
 
     if (mode & METADATA_MODE_FRAME_CAPTURE_ONLY) {
       if (!mLocked) {
-        LOGV ("GstMetadataRetriever setMode activate video protection");
+        LOGV ("setMode activate video protection");
         g_static_mutex_lock (&GstMetadataRetriever_mutex);
         LOGV ("Lock on GstMetadataRetriever acquired");
         mLocked = 1;
-      } else {
-        LOGV ("GstMetadataRetriever::setMode video protection already activated");
-      }
+      } else
+        LOGV ("setMode video protection already activated");
     } else {                    /* ! mode & METADATA_MODE_FRAME_CAPTURE_ONLY */
       if (mLocked) {
-        LOGV ("GstMetadataRetriever::setMode deactivate video protection");
+        LOGV ("setMode deactivate video protection");
         g_static_mutex_unlock (&GstMetadataRetriever_mutex);
         mLocked = 0;
-      } else {
-        LOGV ("GstMetadataRetriever::setMode video protection already deactivated");
-      }
+      } else
+        LOGV ("setMode video protection already deactivated");
     }
     mMode = mode;
     return OK;
@@ -136,7 +131,7 @@ namespace android
   status_t GstMetadataRetriever::getMode (int *mode) const
   {
     *mode = mMode;
-    LOGV ("GstMetadataRetriever getMode mode%d", *mode);
+    LOGV ("getMode mode%d", *mode);
     return OK;
   }
 
@@ -146,24 +141,23 @@ namespace android
     VideoFrame *vFrame = NULL;
     gint64 duration;
 
-    LOGV ("GstMetadataRetriever captureFrame");
+    LOGV ("captureFrame");
 
     if (!mLocked) {
-      LOGE ("GstMetadataRetriever captureFrame video protection not activated => ERROR");
+      LOGE ("captureFrame video protection not activated => ERROR");
       return (NULL);
     }
     mGstDriver->getVideoSize (&width, &height);
 
-    LOGV ("GstMetadataRetriever captureFrame get video size %d x %d", width,
+    LOGV ("captureFrame get video size %d x %d", width,
         height);
     // compute data size
     // FIXME: Check the Framebuffer color depth (if != RGB565)
     size = width * height * 2;  // RGB565
 
     duration = mGstDriver->getDuration ();
-    if (duration) {
+    if (duration)
       mGstDriver->seekSync (duration / 20);
-    }
 
     if (size > 0) {
       vFrame = new VideoFrame ();
@@ -178,7 +172,7 @@ namespace android
       mGstDriver->getCaptureFrame (&(vFrame->mData));
 
       if (vFrame->mData == 0) {
-        LOGV ("GstMetadataRetriever cant' allocate memory for video frame");
+        LOGV ("Cant' allocate memory for video frame");
         delete vFrame;
         vFrame = NULL;
       }
@@ -189,7 +183,7 @@ namespace android
 
   MediaAlbumArt *GstMetadataRetriever::extractAlbumArt ()
   {
-    LOGV ("GstMetadataRetriever extractAlbumArt");
+    LOGV ("extractAlbumArt");
     guint8 *data = NULL;
     guint64 size = 0;
 
@@ -220,7 +214,7 @@ namespace android
     int msec;
     char *duration;
 
-    LOGV ("GstMetadataRetriever keyCode=%d", keyCode);
+    LOGV ("keyCode=%d", keyCode);
 
     switch (keyCode) {
       case METADATA_KEY_CD_TRACK_NUMBER:
@@ -274,7 +268,7 @@ namespace android
         int width, height;
         char *res;
         mGstDriver->getVideoSize (&width, &height);
-        res = (char *) malloc (sizeof (char) * 55);
+        res = (char *) malloc (55);
         sprintf (res, "%d", height);
         return res;
       }
@@ -283,7 +277,7 @@ namespace android
         int width, height;
         char *res;
         mGstDriver->getVideoSize (&width, &height);
-        res = (char *) malloc (sizeof (char) * 55);
+        res = (char *) malloc (55);
         sprintf (res, "%d", width);
         return res;
       }
@@ -296,7 +290,7 @@ namespace android
         int framerate;
         char *res;
         mGstDriver->getFrameRate (&framerate);
-        res = (char *) malloc (sizeof (char) * 55);
+        res = (char *) malloc (55);
         sprintf (res, "%d", framerate);
         return res;
       }
@@ -317,16 +311,16 @@ namespace android
       case METADATA_KEY_IS_DRM_CRIPPLED:
       case METADATA_KEY_RATING:
       default:
-        LOGV ("unsupported metadata keycode %d", keyCode);
+        LOGV ("Unsupported metadata keycode %d", keyCode);
         return NULL;
     }
 
-    LOGV ("GstMetadataRetriever send request for |%s| ", tag);
+    LOGV ("Send request for |%s| ", tag);
 
 
     ret = mGstDriver->getMetadata (tag);
 
-    LOGV ("GstMetadataRetriever tag %s metadata %s", tag, ret);
+    LOGV ("tag %s metadata %s", tag, ret);
     g_free (tag);
 
     return ret;

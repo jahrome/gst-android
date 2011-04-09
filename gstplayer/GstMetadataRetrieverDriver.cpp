@@ -155,7 +155,7 @@ GstMetadataRetrieverDriver::setup (int mode)
 
     caps_filter = gst_caps_new_simple ("video/x-raw-rgb", "bpp", G_TYPE_INT, 16,
                                        NULL);
- 
+
     if (!gst_element_link_filtered (mColorTransform, mScaler, caps_filter))
       LOGE ("Failed to link %s to %s", GST_ELEMENT_NAME (mColorTransform),
             GST_ELEMENT_NAME (mScaler));
@@ -272,7 +272,7 @@ GstMetadataRetrieverDriver::are_video_caps (GstElement * uridecodebin,
 }
 
 
-/* return TRUE if we continu to buld the graph, FALSE either */
+/* return TRUE if we continue to build the graph, FALSE either */
 /*static */
 gboolean
 GstMetadataRetrieverDriver::autoplug_continue (GstElement * object,
@@ -356,7 +356,7 @@ GstMetadataRetrieverDriver::source_changed_cb (GObject * obj,
 {
   UNUSED (pspec);
 
-  // get the newly created source element 
+  // get the newly created source element
   g_object_get (obj, "source", &(ed->mAppsrc), (gchar *) NULL);
 
   if (ed->mAppsrc != NULL) {
@@ -378,7 +378,8 @@ GstMetadataRetrieverDriver::setFdDataSource (int fd, gint64 offset,
 {
   LOGI ("create source from fd %d offset %lld lenght %lld", fd, offset, length);
 
-  // duplicate the fd because it should be close in java layers before we can use it
+  /* duplicate the fd because it should be closed in java layers
+   * before we can use it */
   mFd = dup (fd);
   LOGV ("dup(fd) old %d new %d", fd, mFd);
   // create the uri string with the new fd
@@ -612,12 +613,12 @@ GstMetadataRetrieverDriver::getDuration ()
     LOGV ("get duration but pipeline has not been created yet");
     return 0;
   }
-  // the duration given by gstreamer is in nanosecond 
-  // so we need to transform it in millisecond
+  /* the duration given by gstreamer is in nanosecond
+   * so we need to transform it to millisecond */
   LOGV ("getDuration");
-  if (gst_element_query_duration (mPipeline, &fmt, &len)) {
+  if (gst_element_query_duration (mPipeline, &fmt, &len))
     LOGE ("Stream duration %lld ms", len / 1000000);
-  } else {
+  else {
     LOGV ("Query duration failed");
     len = 0;
   }
@@ -702,9 +703,8 @@ GstMetadataRetrieverDriver::getMetadata (gchar * tag)
   if (count) {
 
     if (gst_tag_get_type (tag) == G_TYPE_STRING) {
-      if (!gst_tag_list_get_string_index (mTag_list, tag, 0, &str)) {
+      if (!gst_tag_list_get_string_index (mTag_list, tag, 0, &str))
         g_assert_not_reached ();
-      }
     } else
       str =
           g_strdup_value_contents (gst_tag_list_get_value_index (mTag_list, tag,
@@ -759,9 +759,7 @@ GstMetadataRetrieverDriver::debug_log (GstDebugCategory * category,
 
   pid = getpid ();
 
-  elapsed = GST_CLOCK_DIFF (ed->mGst_info_start_time,
-      gst_util_get_timestamp ());
-
+  elapsed = GST_CLOCK_DIFF (ed->mGst_info_start_time, gst_util_get_timestamp ());
 
   g_printerr ("%" GST_TIME_FORMAT " %5d %s %s %s:%d %s\r\n",
               GST_TIME_ARGS (elapsed), pid, gst_debug_level_get_name (level),
@@ -791,10 +789,9 @@ GstMetadataRetrieverDriver::init_gstreamer ()
 
   if (!gst_init_check (NULL, NULL, &err)) {
     LOGE ("Could not initialize GStreamer: %s\n",
-        err ? err->message : "unknown error occurred");
-    if (err) {
+          err ? err->message : "unknown error occurred");
+    if (err)
       g_error_free (err);
-    }
   }
 
 }

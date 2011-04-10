@@ -80,9 +80,8 @@ namespace android
     gint mFd;
 
 
-    static gboolean have_video_caps (GstElement * uridecodebin, GstCaps * caps);
-    static gboolean are_audio_caps (GstElement * uridecodebin, GstCaps * caps);
-    static gboolean are_video_caps (GstElement * uridecodebin, GstCaps * caps);
+    static gboolean are_audio_caps (GstCaps * caps);
+    static gboolean are_video_caps (GstCaps * caps);
 
     static gboolean autoplug_continue (GstElement * object, GstPad * pad,
         GstCaps * caps, GstMetadataRetrieverDriver * ed);

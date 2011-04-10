@@ -39,10 +39,7 @@ static GstStaticCaps static_audio_caps =
     ("audio/mpeg,framed=true;audio/mpeg,parsed=true;audio/AMR;audio/AMR-WB;audio/x-wma;audio/midi;audio/mobile-xmf");
 static GstStaticCaps static_video_caps =
     GST_STATIC_CAPS
-    ("video/mpeg;video/x-h263;video/x-h264;video/x-divx;video/x-wmv");
-
-static GstStaticCaps static_have_video_caps =
-    GST_STATIC_CAPS ("video/x-raw-yuv;video/x-raw-rgb");
+    ("video/mpeg;video/x-h263;video/x-h264;video/x-divx;video/x-wmv;video/quicktime;video/x-matroska");
 
 
 GstMetadataRetrieverDriver::GstMetadataRetrieverDriver ():
@@ -101,26 +98,28 @@ GstMetadataRetrieverDriver::cb_newpad (GstElement * mUriDecodeBin, GstPad * pad,
     GstMetadataRetrieverDriver * data)
 {
   GstCaps *caps;
-  GstStructure *str;
   gboolean err = true;
+  gboolean is_video = false;
+  const gchar *str_name;
 
-  caps = gst_pad_get_caps (pad);
-  str = gst_caps_get_structure (caps, 0);
-  if (g_strrstr (gst_structure_get_name (str), "audio")) {
+  caps     = gst_pad_get_caps (pad);
+  str_name = gst_structure_get_name (gst_caps_get_structure (caps, 0));
+  
+  if (g_strrstr (str_name, "audio/")) {
     LOGI ("Got an audio pad");
     err = gst_element_link (data->mUriDecodeBin, data->mAudioSink);
-  } else if (g_strrstr (gst_structure_get_name (str), "video")) {
+  } else if (g_strrstr (str_name, "video/")) {
     LOGI ("Got a video pad");
+    is_video = true;
     err = gst_element_link (data->mUriDecodeBin, data->mColorTransform);
   } else {
-    LOGW ("Got a pad we don't know how to handle");
+    LOGW ("Got a pad we don't know how to handle: %s", str_name);
     return;
   }
 
   if (!err)
     LOGE ("Could not link %s with %s", GST_ELEMENT_NAME (data->mUriDecodeBin),
-          GST_ELEMENT_NAME (data->mAudioSink ?
-          data->mAudioSink : data->mColorTransform));
+          GST_ELEMENT_NAME (is_video ? data->mColorTransform : data->mAudioSink));
 
   gst_caps_unref (caps);
 
@@ -213,32 +212,13 @@ GstMetadataRetrieverDriver::setDataSource (const char *url)
 }
 
 /*static*/ gboolean
-GstMetadataRetrieverDriver::have_video_caps (GstElement * uridecodebin,
-    GstCaps * caps)
-{
-  GstCaps *video_caps;
-  gboolean res;
-
-  video_caps = gst_static_caps_get (&static_have_video_caps);
-  GST_OBJECT_LOCK (uridecodebin);
-  res = gst_caps_can_intersect (caps, video_caps);
-  GST_OBJECT_UNLOCK (uridecodebin);
-
-  gst_caps_unref (video_caps);
-  return res;
-}
-
-/*static*/ gboolean
-GstMetadataRetrieverDriver::are_audio_caps (GstElement * uridecodebin,
-    GstCaps * caps)
+GstMetadataRetrieverDriver::are_audio_caps (GstCaps * caps)
 {
   GstCaps *end_caps;
   gboolean res;
 
   end_caps = gst_static_caps_get (&static_audio_caps);
-  GST_OBJECT_LOCK (uridecodebin);
   res = gst_caps_can_intersect (caps, end_caps);
-  GST_OBJECT_UNLOCK (uridecodebin);
 
   gst_caps_unref (end_caps);
   return res;
@@ -246,16 +226,13 @@ GstMetadataRetrieverDriver::are_audio_caps (GstElement * uridecodebin,
 
 /* static*/
 gboolean
-GstMetadataRetrieverDriver::are_video_caps (GstElement * uridecodebin,
-    GstCaps * caps)
+GstMetadataRetrieverDriver::are_video_caps (GstCaps * caps)
 {
   GstCaps *end_caps;
   gboolean res;
 
   end_caps = gst_static_caps_get (&static_video_caps);
-  GST_OBJECT_LOCK (uridecodebin);
   res = gst_caps_can_intersect (caps, end_caps);
-  GST_OBJECT_UNLOCK (uridecodebin);
 
   gst_caps_unref (end_caps);
   return res;
@@ -271,22 +248,30 @@ GstMetadataRetrieverDriver::autoplug_continue (GstElement * object,
   GstStructure *structure = NULL;
   structure = gst_caps_get_structure (caps, 0);
   gboolean res;
+  gboolean is_video;
 
   UNUSED (pad);
 
-  //LOGV("autoplug_continue %s" ,gst_structure_get_name(structure));
-  if (are_video_caps (object, caps)) {
-    //LOGV("\nfound video caps %" GST_PTR_FORMAT, caps);
-    ed->mHaveStreamVideo = TRUE;
+  is_video = are_video_caps(caps);
+
+  LOGV ("autoplug_continue %s" ,gst_structure_get_name(structure));
+
+  LOGI ("autoplug_continue() callback");
+  if (is_video) {
+    LOGV ("\nfound video caps %" GST_PTR_FORMAT, caps);
+    ed->mHaveStreamVideo = true;
   }
 
-  res = are_audio_caps (object, caps);
+  if (ed->mHaveStreamVideo && (ed->mMode & METADATA_MODE_FRAME_CAPTURE_ONLY))
+    return true;
 
-  if (res && (ed->mMode & METADATA_MODE_METADATA_RETRIEVAL_ONLY)) {
-    res &= are_video_caps (object, caps);
-  }
+  res = are_audio_caps (caps);
 
-  return res;
+  if (!res && (ed->mMode & METADATA_MODE_METADATA_RETRIEVAL_ONLY))
+    return true; 
+
+  LOGV ("Stopping autopluging for pad");
+  return false;
 }
 
 /*static*/ void
@@ -461,6 +446,9 @@ GstMetadataRetrieverDriver::prepareSync ()
 
   mState = GST_STATE_PAUSED;
 
+  if (!message)
+    LOGW("Timeout reached waiting message from bus, bailing out");
+
   while (message != NULL) {
     switch (GST_MESSAGE_TYPE (message)) {
       case GST_MESSAGE_TAG:
@@ -509,7 +497,8 @@ GstMetadataRetrieverDriver::prepareSync ()
       }
 
       default:
-        // do nothing
+        LOGW ("Discarding message:%d", GST_MESSAGE_TYPE (message)); 
+        gst_message_unref (message);
         break;
     }
     message = gst_bus_timed_pop_filtered (bus, 50 * GST_MSECOND, message_filter);

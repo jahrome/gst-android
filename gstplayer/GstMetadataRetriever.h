@@ -23,6 +23,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <utils/Errors.h>
 #include <media/MediaMetadataRetrieverInterface.h>
+#include <media/mediametadataretriever.h>
 #include "GstMetadataRetrieverDriver.h"
 
 namespace android

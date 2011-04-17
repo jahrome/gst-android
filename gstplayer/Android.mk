@@ -56,43 +56,43 @@ include $(BUILD_SHARED_LIBRARY)
 # -------------------------------------
 # gstmetadataretriever library
 #
-include $(CLEAR_VARS)
-
-LOCAL_ARM_MODE := arm
-
-LOCAL_SRC_FILES := \
-	GstMetadataRetriever.cpp \
-	GstMetadataRetrieverDriver.cpp
-
-LOCAL_SHARED_LIBRARIES := \
-	libgstreamer-0.10	\
-	libgstbase-0.10		\
-	libglib-2.0		\
-	libgthread-2.0		\
-	libgmodule-2.0		\
-	libgobject-2.0		\
-	libgstvideo-0.10	\
-	libutils		\
-	libcutils		\
-	libui			\
-	libhardware		\
-	libandroid_runtime	\
-	libmedia
-
-LOCAL_CFLAGS := \
-	$(shell $(PKG_CONFIG) gstreamer-0.10 --cflags) \
-	$(shell $(PKG_CONFIG) gstreamer-tag-0.10 --cflags) \
-	-DANDROID_USE_GSTREAMER
-
-LOCAL_LDLIBS := -ldl -lpthread 
-
-LOCAL_MODULE:= libgstmetadataretriever
-LOCAL_MODULE_TAGS := eng debug
-
-LOCAL_PRELINK_MODULE := false 
-
-include $(BUILD_SHARED_LIBRARY)
-
+#include $(CLEAR_VARS)
+#
+#LOCAL_ARM_MODE := arm
+#
+#LOCAL_SRC_FILES := \
+#	GstMetadataRetriever.cpp \
+#	GstMetadataRetrieverDriver.cpp
+#
+#LOCAL_SHARED_LIBRARIES := \
+#	libgstreamer-0.10	\
+#	libgstbase-0.10		\
+#	libglib-2.0		\
+#	libgthread-2.0		\
+#	libgmodule-2.0		\
+#	libgobject-2.0		\
+#	libgstvideo-0.10	\
+#	libutils		\
+#	libcutils		\
+#	libui			\
+#	libhardware		\
+#	libandroid_runtime	\
+#	libmedia
+#
+#LOCAL_CFLAGS := \
+#	$(shell $(PKG_CONFIG) gstreamer-0.10 --cflags) \
+#	$(shell $(PKG_CONFIG) gstreamer-tag-0.10 --cflags) \
+#	-DANDROID_USE_GSTREAMER
+#
+#LOCAL_LDLIBS := -ldl -lpthread 
+#
+#LOCAL_MODULE:= libgstmetadataretriever
+#LOCAL_MODULE_TAGS := eng debug
+#
+#LOCAL_PRELINK_MODULE := false 
+#
+#include $(BUILD_SHARED_LIBRARY)
+#
 
 #
 ## -------------------------------------

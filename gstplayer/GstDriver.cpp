@@ -155,11 +155,33 @@ GstDriver::setup ()
   g_source_set_callback (mBusWatch, (GSourceFunc) bus_message, this, NULL);
   g_source_attach (mBusWatch, mMainCtx);
 
+  GstElement *source, *filter, *sink;
+  GstCaps *caps;
+  GstPad *pad;
+
   if (mparent) {
-    mVideoBin = gst_element_factory_make ("surfaceflingersink", NULL);
-    if (!mVideoBin) {
-      LOGE ("Can't create surfaceflingersink");
+    char value[PROPERTY_VALUE_MAX];
+    property_get ("gstreamer.framerate", value, "15");
+    LOGV ("Creating a bin for video output, gstreamer.framerate = %d", atoi(value));
+
+    mBin = gst_bin_new ("my_bin");
+    source = gst_element_factory_make ("videorate", "source");
+    filter = gst_element_factory_make ("ffmpegcolorspace", "filter");
+    caps = gst_caps_new_simple ("video/x-raw-rgb", "framerate", GST_TYPE_FRACTION, atoi(value), 1, NULL);
+    mVideoBin = gst_element_factory_make ("surfaceflingersink", "sink");
+
+    gst_bin_add_many (GST_BIN (mBin), source, filter, mVideoBin, NULL);
+    pad = gst_element_get_static_pad (source, "sink");
+    gst_element_add_pad (mBin, gst_ghost_pad_new ("sink", pad));
+    gst_object_unref (GST_OBJECT (pad));
+
+    if (!gst_element_link (source, filter)) {
+      LOGE ("Failed to link source and filter !");
     }
+    if (!gst_element_link_filtered (filter, mVideoBin, caps)) {
+      LOGE ("Failed to link filter and sink!");
+    }
+
     LOGV ("add surfaceflingersink to playbin");
     mAudioBin = gst_element_factory_make ("audioflingersink", NULL);
     if (!mAudioBin) {
@@ -180,7 +202,7 @@ GstDriver::setup ()
       LOGE ("Can't create fakesink");
     }
   }
-  g_object_set (G_OBJECT (mPlaybin), "video-sink", mVideoBin, (gchar *) NULL);
+  g_object_set (G_OBJECT (mPlaybin), "video-sink", mBin, (gchar *) NULL);
 
   /*Audio sink */
   LOGV ("add audioflingersink to playbin");

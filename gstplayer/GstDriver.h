@@ -94,6 +94,7 @@ namespace android
   private:
       MediaPlayerInterface * mparent;
     GstElement *mVideoBin;
+    GstElement *mBin;
     GstElement *mAudioBin;
     // internal audio sink
       sp < MediaPlayerInterface::AudioSink > mAudioOut;

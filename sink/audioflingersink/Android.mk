@@ -56,7 +56,7 @@ LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/gstreamer-0.10
 # define LOCAL_PRELINK_MODULE to false to not use pre-link map
 #
 LOCAL_PRELINK_MODULE := false 
-LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_TAGS := eng debug
 
 include $(BUILD_SHARED_LIBRARY)
 

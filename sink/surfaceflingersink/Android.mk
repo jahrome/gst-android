@@ -21,7 +21,7 @@ LOCAL_SHARED_LIBRARIES := \
 	libsurfaceflinger_client \
 	libbinder
 
-LOCAL_MODULE:= libgstsurfaceflingersink
+LOCAL_MODULE:= libgstsurfaceflinger
 
 
 LOCAL_C_INCLUDES := \

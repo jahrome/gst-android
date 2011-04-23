@@ -17,7 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 #ifdef HAVE_CONFIG_H
-//#include "config.h"
+#include "config.h"
 #endif
 
 #include <signal.h>
@@ -381,8 +381,7 @@ gst_surfaceflinger_sink_get_type (void)
   return surfacesink_type;
 }
 
-/*
+
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
     "surfaceflingersink", "android surface flinger sink",
     plugin_init, VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
-*/

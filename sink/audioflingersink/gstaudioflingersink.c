@@ -988,8 +988,6 @@ gst_audioflinger_sink_getcaps (GstBaseSink * bsink)
   audioflinger_sink = GST_AUDIOFLINGERSINK (bsink);
   GST_DEBUG_OBJECT (audioflinger_sink, "enter,%p",
       audioflinger_sink->audioflinger_device);
-  LOGD ("gst_audioflinger_sink_getcaps,%p",
-      audioflinger_sink->audioflinger_device);
   if (audioflinger_sink->audioflinger_device == NULL
       || audioflinger_sink->m_init == FALSE) {
     caps =
